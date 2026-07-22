@@ -7,6 +7,7 @@
   "scripts": {
     "setup": "npm install && npm run setup:python",
     "setup:python": "bash scripts/setup-python.sh",
+    "generate:fixtures": "bash scripts/generate-fixtures.sh",
     "test": "npm run test --workspaces --if-present",
     "dev": "npm run dev -w @three-camera-lab/viz",
     "build": "npm run build --workspaces --if-present",

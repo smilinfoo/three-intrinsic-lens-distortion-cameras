@@ -222,12 +222,20 @@ World-frame alignment depends on how the calibration target was defined (chessbo
 
 ## 6. Normalized vs pixel coordinates
 
-*(To be expanded when pinhole projection is implemented.)*
+Pinhole projection (no distortion) follows this pipeline in `packages/core`:
+
+```
+(X, Y, Z)  →  (x, y) = (X/Z, Y/Z)  →  (u, v) = (fx·x + cx, fy·y + cy)
+   3D              normalized               pixels
+```
 
 | Space | Coordinates | Range |
 |-------|-------------|-------|
-| Normalized plane | `(x, y) = (X/Z, Y/Z)` | Unbounded (distortion applied here) |
-| Pixels | `(u, v)` | `[0, width)` × `[0, height)` |
+| OpenCV camera frame | `(X, Y, Z)` | `Z > 0` in front of camera |
+| Normalized plane | `(x, y) = (X/Z, Y/Z)` | Unbounded (distortion applied here in later phases) |
+| Pixels | `(u, v)` | Sub-pixel floats from `cv2.projectPoints` |
+
+Golden fixtures use identity extrinsics with 3D points already in the OpenCV camera frame. JS implementation: `projection/pinhole.ts`.
 
 ---
 

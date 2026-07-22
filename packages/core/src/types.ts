@@ -1,0 +1,47 @@
+/** 2D vector: pixel (u, v) or normalized (x, y). */
+export type Vec2 = readonly [number, number];
+
+/** 3D vector in camera or world space. */
+export type Vec3 = readonly [number, number, number];
+
+/** OpenCV pinhole intrinsics: u = fx*x + cx, v = fy*y + cy. */
+export interface CameraMatrix {
+  readonly fx: number;
+  readonly fy: number;
+  readonly cx: number;
+  readonly cy: number;
+}
+
+/** Numeric tolerance for golden-test comparisons. */
+export interface Tolerance {
+  readonly abs: number;
+  readonly rel: number;
+}
+
+/** Golden fixture schema for pinhole projection tests. */
+export interface PinholeFixture {
+  readonly model: 'pinhole';
+  readonly opencv_version: string;
+  readonly camera_matrix: readonly (readonly number[])[];
+  readonly dist_coeffs: readonly number[];
+  readonly points_3d: readonly (readonly number[])[];
+  readonly expected_pixels: readonly (readonly number[])[];
+  readonly tolerance: Tolerance;
+}
+
+export function cameraMatrixFromArray(matrix: readonly (readonly number[])[]): CameraMatrix {
+  return {
+    fx: matrix[0][0],
+    fy: matrix[1][1],
+    cx: matrix[0][2],
+    cy: matrix[1][2],
+  };
+}
+
+export function vec2(x: number, y: number): Vec2 {
+  return [x, y];
+}
+
+export function vec3(x: number, y: number, z: number): Vec3 {
+  return [x, y, z];
+}
