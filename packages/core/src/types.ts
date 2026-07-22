@@ -29,12 +29,42 @@ export interface PinholeFixture {
   readonly tolerance: Tolerance;
 }
 
+/** OpenCV Brown-Conrady (plumb bob) distortion coefficients. */
+export interface BrownConradyCoeffs {
+  readonly k1: number;
+  readonly k2: number;
+  readonly p1: number;
+  readonly p2: number;
+  readonly k3: number;
+}
+
+/** Golden fixture schema for Brown-Conrady projection tests. */
+export interface BrownConradyFixture {
+  readonly model: 'brown-conrady';
+  readonly opencv_version: string;
+  readonly camera_matrix: readonly (readonly number[])[];
+  readonly dist_coeffs: readonly number[];
+  readonly points_3d: readonly (readonly number[])[];
+  readonly expected_pixels: readonly (readonly number[])[];
+  readonly tolerance: Tolerance;
+}
+
 export function cameraMatrixFromArray(matrix: readonly (readonly number[])[]): CameraMatrix {
   return {
     fx: matrix[0][0],
     fy: matrix[1][1],
     cx: matrix[0][2],
     cy: matrix[1][2],
+  };
+}
+
+export function brownConradyFromArray(dist: readonly number[]): BrownConradyCoeffs {
+  return {
+    k1: dist[0],
+    k2: dist[1],
+    p1: dist[2],
+    p2: dist[3],
+    k3: dist[4] ?? 0,
   };
 }
 

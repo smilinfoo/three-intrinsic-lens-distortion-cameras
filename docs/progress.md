@@ -1,6 +1,6 @@
 # Progress
 
-Last updated: 2026-07-22 (docs refreshed after Phase 2 merge)
+Last updated: 2026-07-22
 
 Use this file to resume work. The detailed plan lives in [README.md](../README.md).
 
@@ -8,9 +8,9 @@ Use this file to resume work. The detailed plan lives in [README.md](../README.m
 
 ## Current position
 
-**Phase 2 — Pinhole only** ✅ complete
+**Phase 3 — Brown-Conrady** ✅ complete
 
-Phase 1 (types + coords) and Phase 2 (pinhole projection + golden tests) are done. Next up: Brown-Conrady distortion.
+Phases 0–3 are done. Next up: Phase 4 rational polynomial distortion.
 
 ---
 
@@ -21,8 +21,8 @@ Phase 1 (types + coords) and Phase 2 (pinhole projection + golden tests) are don
 | **0 — Scaffold** | ✅ Done | Monorepo, Vitest, Vite/Three.js scene, Python `.venv`, OpenCV verify script |
 | **1 — Conventions + types** | ✅ Done | `types.ts`, `coords/opencv.ts`, `coords/three.ts`, unit tests |
 | **2 — Pinhole only** | ✅ Done | `projection/pinhole.ts`, Python fixtures, golden tests passing |
-| **3 — Brown-Conrady** | ⬜ Not started | Next phase |
-| **4 — Rational polynomial** | ⬜ Not started | |
+| **3 — Brown-Conrady** | ✅ Done | `distortion/brown-conrady.ts`, 4 fixtures, unit + golden tests |
+| **4 — Rational polynomial** | ⬜ Not started | Next phase |
 | **5 — OpenCV fisheye** | ⬜ Not started | |
 | **6 — Viz (minimal)** | ⬜ Not started | Basic Three.js scene exists; no projection overlay yet |
 | **7 — Undistortion / inverse** | ⬜ Not started | |
@@ -32,24 +32,22 @@ Phase 1 (types + coords) and Phase 2 (pinhole projection + golden tests) are don
 
 ## What is done
 
-### Phase 1
-- `packages/core/src/types.ts` — `Vec2`, `Vec3`, `CameraMatrix`, `PinholeFixture`
-- `packages/core/src/coords/opencv.ts` — `isInFrontOfOpenCvCamera`
-- `packages/core/src/coords/three.ts` — `opencvCameraToThreeJs`, `threeJsCameraToOpenCv`
-- Unit tests: `test/unit/coords.test.ts`
+### Phase 3
+- `packages/core/src/distortion/brown-conrady.ts` — `distortBrownConrady`, `projectBrownConrady`
+- `packages/core/src/types.ts` — `BrownConradyCoeffs`, `BrownConradyFixture`, `brownConradyFromArray`
+- `reference/fixtures/brown-conrady/` — `basic`, `radial-only`, `tangential-only`, `zero-distortion`
+- Unit tests: `test/unit/brown-conrady.test.ts`
+- Golden tests: `test/golden/brown-conrady.test.ts`
+- Model docs: [docs/models/brown-conrady.md](./models/brown-conrady.md)
 
-### Phase 2
-- `packages/core/src/projection/pinhole.ts` — normalize → apply `K` → `(u, v)`
-- `reference/src/camera_lab_ref/generate_fixtures.py` — pinhole fixture generator
-- `reference/fixtures/pinhole/basic.json` — OpenCV-generated golden vectors
-- Golden test: `test/golden/pinhole.test.ts`
-- Unit tests: `test/unit/pinhole.test.ts`
-- `npm run generate:fixtures` script
+### Prior phases
+- Phase 1: types, coords helpers
+- Phase 2: pinhole projection + golden tests
 
 ### Commands
 ```bash
 npm run setup              # JS + Python .venv
-npm test                   # 11 tests (unit + golden)
+npm test                   # 21 tests (unit + golden)
 npm run generate:fixtures  # Regenerate JSON from OpenCV
 npm run verify:opencv      # Python smoke test
 npm run dev                # Three.js scene
@@ -59,17 +57,17 @@ npm run dev                # Three.js scene
 
 ## Next step (start here)
 
-**Phase 3 — Brown-Conrady forward distortion**
+**Phase 4 — Rational polynomial forward distortion**
 
-1. Extend `generate_fixtures.py` with Brown-Conrady cases (`cv2.projectPoints`, non-zero dist coeffs).
-2. Add `packages/core/src/distortion/brown-conrady.ts` — forward distortion on normalized plane.
-3. Wire distortion into projection pipeline (normalize → distort → apply `K`).
-4. Golden tests against `reference/fixtures/brown-conrady/`.
+1. Document model in `docs/models/rational.md`.
+2. Extend `generate_fixtures.py` with rational-polynomial cases.
+3. Add `packages/core/src/distortion/rational.ts`.
+4. Golden tests against `reference/fixtures/rational/`.
 
-**Do not** start viz overlays until Brown-Conrady golden tests pass.
+**Do not** start viz overlays or undistortion until forward models are solid.
 
 ---
 
 ## Prompt to paste when resuming
 
-> Continue three-camera-lab. Read `docs/progress.md`. Phase 2 pinhole is complete. Start Phase 3 Brown-Conrady forward distortion with Python fixtures and golden tests.
+> Continue three-camera-lab. Read `docs/progress.md`. Phase 3 Brown-Conrady is complete. Start Phase 4 rational polynomial forward distortion with Python fixtures and golden tests.
