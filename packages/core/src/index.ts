@@ -9,3 +9,4 @@ export * from './types';
 export * from './coords/opencv';
 export * from './coords/three';
 export * from './projection/pinhole';
+export * from './distortion/brown-conrady';

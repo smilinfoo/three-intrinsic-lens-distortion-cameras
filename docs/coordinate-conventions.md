@@ -262,7 +262,7 @@ Coefficient order must match OpenCV exactly. Per-model math notes will be added 
 | Model | OpenCV function | Coefficient order | Status |
 |-------|-----------------|-------------------|--------|
 | Pinhole (none) | `cv2.projectPoints` | `[0, 0, 0, 0, 0]` | ✅ Implemented |
-| Brown-Conrady (plumb bob) | `cv2.projectPoints` | `[k1, k2, p1, p2, k3]` | Phase 3 |
+| Brown-Conrady (plumb bob) | `cv2.projectPoints` | `[k1, k2, p1, p2, k3]` | ✅ [docs/models/brown-conrady.md](./models/brown-conrady.md) |
 | Rational | `cv2.projectPoints` | `[k1…k6, p1, p2]` (extended) | Phase 4 |
 | Fisheye | `cv2.fisheye.projectPoints` | `[k1, k2, k3, k4]` | Phase 5 |
 

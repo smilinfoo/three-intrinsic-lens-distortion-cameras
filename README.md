@@ -58,7 +58,7 @@ PYTHON=/path/to/python3.12 npm run setup:python
 
 ### `@three-camera-lab/core`
 
-Pure camera mathematics. No Three.js dependency. Currently implements pinhole projection with golden tests against OpenCV fixtures. Distortion models will be added incrementally.
+Pure camera mathematics. No Three.js dependency. Implements pinhole projection and Brown-Conrady forward distortion with golden tests against OpenCV fixtures.
 
 ### `@three-camera-lab/viz`
 
@@ -74,9 +74,10 @@ Python/OpenCV ground truth. Generates golden test vectors and provides verificat
 |------|--------|-------------|
 | 1. Coordinate conventions | ✅ Done | [docs/coordinate-conventions.md](./docs/coordinate-conventions.md) |
 | 2. Pinhole + golden tests | ✅ Done | `projection/pinhole.ts`, `reference/fixtures/pinhole/` |
-| 3. Distortion models | 🔄 Next | Brown-Conrady, rational, fisheye — one at a time |
-| 4. Viz per model | ⬜ Pending | Grid / overlay demos using `core` |
-| 5. Custom cameras / shaders | ⬜ Pending | `packages/viz/cameras`, `shaders` |
+| 3. Brown-Conrady distortion | ✅ Done | `distortion/brown-conrady.ts`, `reference/fixtures/brown-conrady/` |
+| 4. Rational + fisheye models | 🔄 Next | Rational polynomial, then OpenCV fisheye |
+| 5. Viz per model | ⬜ Pending | Grid / overlay demos using `core` |
+| 6. Custom cameras / shaders | ⬜ Pending | `packages/viz/cameras`, `shaders` |
 
 Detailed phase checklist: [docs/progress.md](./docs/progress.md).
 
@@ -131,7 +132,7 @@ Authoritative reference: [docs/coordinate-conventions.md](./docs/coordinate-conv
 | Pixel center / sub-pixel output from `cv2.projectPoints` | ✅ Verified and documented |
 | Behind-camera points (`Z ≤ 0`) | ✅ Policy set (exclude from fixtures) |
 | Golden-test floating-point tolerance | ✅ `1e-4` px absolute |
-| Distortion coefficient layouts | ⬜ Summary table only; per-model notes in Phase 3+ |
+| Distortion coefficient layouts | ⬜ Rational/fisheye pending; [Brown-Conrady documented](./models/brown-conrady.md) |
 | Fisheye vs pinhole code paths | ⬜ Planned — separate modules and docs |
 
 ## License
