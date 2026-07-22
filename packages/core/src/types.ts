@@ -72,6 +72,25 @@ export interface RationalFixture {
   readonly tolerance: Tolerance;
 }
 
+/** OpenCV fisheye distortion coefficients. */
+export interface FisheyeCoeffs {
+  readonly k1: number;
+  readonly k2: number;
+  readonly k3: number;
+  readonly k4: number;
+}
+
+/** Golden fixture schema for fisheye projection tests. */
+export interface FisheyeFixture {
+  readonly model: 'fisheye';
+  readonly opencv_version: string;
+  readonly camera_matrix: readonly (readonly number[])[];
+  readonly dist_coeffs: readonly number[];
+  readonly points_3d: readonly (readonly number[])[];
+  readonly expected_pixels: readonly (readonly number[])[];
+  readonly tolerance: Tolerance;
+}
+
 export function cameraMatrixFromArray(matrix: readonly (readonly number[])[]): CameraMatrix {
   return {
     fx: matrix[0][0],
@@ -101,6 +120,15 @@ export function rationalFromArray(dist: readonly number[]): RationalCoeffs {
     k4: dist[5] ?? 0,
     k5: dist[6] ?? 0,
     k6: dist[7] ?? 0,
+  };
+}
+
+export function fisheyeFromArray(dist: readonly number[]): FisheyeCoeffs {
+  return {
+    k1: dist[0],
+    k2: dist[1],
+    k3: dist[2] ?? 0,
+    k4: dist[3] ?? 0,
   };
 }
 

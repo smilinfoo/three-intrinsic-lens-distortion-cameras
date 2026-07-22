@@ -54,7 +54,7 @@ PYTHON=/path/to/python3.12 npm run setup:python
 | `npm run setup` | Install JS deps + create `.venv` and install Python reference package |
 | `npm run setup:python` | Create/update `.venv` only |
 | `npm run generate:fixtures` | Regenerate OpenCV golden JSON fixtures |
-| `npm test` | Run Vitest (33 tests in `@three-camera-lab/core`) |
+| `npm test` | Run Vitest (41 tests in `@three-camera-lab/core`) |
 | `npm run dev` | Start the Vite dev server (Three.js scene) |
 | `npm run verify:opencv` | Run OpenCV verification inside `.venv` |
 
@@ -62,7 +62,7 @@ PYTHON=/path/to/python3.12 npm run setup:python
 
 ### `@three-camera-lab/core`
 
-Pure camera mathematics. No Three.js dependency. Implements pinhole projection, Brown-Conrady, and rational polynomial forward distortion with golden tests against OpenCV fixtures.
+Pure camera mathematics. No Three.js dependency. Implements pinhole, Brown-Conrady, rational polynomial, and OpenCV fisheye forward projection with golden tests against OpenCV fixtures.
 
 ### `@three-camera-lab/viz`
 
@@ -80,8 +80,8 @@ Python/OpenCV ground truth. Generates golden test vectors and provides verificat
 | 2. Pinhole + golden tests | ✅ Done | `projection/pinhole.ts`, `reference/fixtures/pinhole/` |
 | 3. Brown-Conrady distortion | ✅ Done | [models/brown-conrady.md](./docs/models/brown-conrady.md) |
 | 4. Rational polynomial | ✅ Done | [models/rational.md](./docs/models/rational.md) |
-| 5. OpenCV fisheye | 🔄 Next | Plan: [docs/plans/phase-5-fisheye.md](./docs/plans/phase-5-fisheye.md) |
-| 6. Viz per model | ⬜ Pending | Grid / overlay demos using `core` |
+| 5. OpenCV fisheye | ✅ Done | [models/fisheye.md](./docs/models/fisheye.md) |
+| 6. Viz per model | 🔄 Next | Grid / overlay demos using `core` |
 | 7. Custom cameras / shaders | ⬜ Pending | `packages/viz/cameras`, `shaders` |
 
 Detailed phase checklist: [docs/progress.md](./docs/progress.md) · Plans: [docs/plans/](./docs/plans/)
@@ -139,8 +139,8 @@ Authoritative reference: [docs/coordinate-conventions.md](./docs/coordinate-conv
 | Pixel center / sub-pixel output from `cv2.projectPoints` | ✅ Verified and documented |
 | Behind-camera points (`Z ≤ 0`) | ✅ Policy set (exclude from fixtures) |
 | Golden-test floating-point tolerance | ✅ `1e-4` px absolute |
-| Distortion coefficient layouts | ✅ Brown-Conrady + rational documented; fisheye Phase 5 |
-| Fisheye vs pinhole code paths | ⬜ Phase 5 — separate module; plan at [docs/plans/phase-5-fisheye.md](./docs/plans/phase-5-fisheye.md) |
+| Distortion coefficient layouts | ✅ All forward models in [docs/models/](./docs/models/) |
+| Fisheye vs pinhole code paths | ✅ Separate module and API (`cv2.fisheye.projectPoints`) |
 
 ## License
 
