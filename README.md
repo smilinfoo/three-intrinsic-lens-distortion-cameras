@@ -73,41 +73,6 @@ Python/OpenCV ground truth. Generates golden test vectors and provides verificat
 4. Three.js visualization per model
 5. Custom cameras and shader implementations
 
-## Implementation order
-Build vertically by model, always with fixtures before viz.
-
-Phase	Deliverable	Why this order
-0 — Scaffold
-Monorepo, vitest, Python env, empty conventions.md skeleton
-Establishes contracts before code
-1 — Conventions + types
-docs/conventions.md, types.ts, coords/opencv.ts
-Prevents silent sign/frame bugs
-2 — Pinhole only
-projection/pinhole.ts + Python fixtures + golden tests
-Simplest end-to-end pipeline
-3 — Brown-Conrady
-Forward distortion + golden vs cv2.projectPoints
-Most common model; validates distortion pipeline
-4 — Rational polynomial
-Same pattern; extend fixture schema
-Builds on Brown-Conrady structure
-5 — OpenCV fisheye
-Separate module (different equations + coeff layout)
-Proves “one folder per model” scales
-6 — Viz (minimal)
-One grid demo per model using core
-Visual sanity check after numerics pass
-7 — Undistortion / inverse
-Numerical or iterative inverse per model
-Harder; only after forward is solid
-8 — Three.js camera / shaders
-packages/viz/cameras, shaders
-Rendering is last; math is already trusted
-Within each phase: Python fixture → JS forward impl → golden test → (optional) tiny viz example.
-
-
-
 ## Testing strategy
 Three layers, all model-scoped:
 
