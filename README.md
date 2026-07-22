@@ -47,6 +47,7 @@ PYTHON=/path/to/python3.12 npm run setup:python
 |---|---|
 | `npm run setup` | Install JS deps + create `.venv` and install Python reference package |
 | `npm run setup:python` | Create/update `.venv` only |
+| `npm run generate:fixtures` | Regenerate OpenCV golden JSON fixtures |
 | `npm test` | Run Vitest across all packages |
 | `npm run dev` | Start the Vite dev server (Three.js scene) |
 | `npm run verify:opencv` | Run OpenCV verification inside `.venv` |
