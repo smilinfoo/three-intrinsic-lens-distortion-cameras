@@ -2,18 +2,22 @@
 
 Educational laboratory for implementing OpenCV-compatible camera models in JavaScript, with Python/OpenCV as the numerical reference.
 
-**Session progress:** see [docs/progress.md](./docs/progress.md) for current phase and next steps.
+**Session progress:** [docs/progress.md](./docs/progress.md) · **Phase plans:** [docs/plans/](./docs/plans/) · **Model docs:** [docs/models/](./docs/models/)
 
 ## Project layout
 
 ```
 three-camera-lab/
-├── docs/                    # Convention and model documentation
+├── docs/
+│   ├── progress.md              # Current phase + next step
+│   ├── coordinate-conventions.md
+│   ├── plans/                   # Per-phase implementation plans
+│   └── models/                  # Per-model equations + API
 ├── packages/
-│   ├── core/                # Pure JS camera math (no Three.js)
-│   └── viz/                 # Three.js visualization
-├── reference/               # Python/OpenCV reference + fixtures
-└── scripts/                 # Utility scripts
+│   ├── core/                    # Pure JS camera math (no Three.js)
+│   └── viz/                     # Three.js visualization
+├── reference/                   # Python/OpenCV + fixtures
+└── scripts/
 ```
 
 ## Prerequisites
@@ -50,7 +54,7 @@ PYTHON=/path/to/python3.12 npm run setup:python
 | `npm run setup` | Install JS deps + create `.venv` and install Python reference package |
 | `npm run setup:python` | Create/update `.venv` only |
 | `npm run generate:fixtures` | Regenerate OpenCV golden JSON fixtures |
-| `npm test` | Run Vitest across all packages |
+| `npm test` | Run Vitest (33 tests in `@three-camera-lab/core`) |
 | `npm run dev` | Start the Vite dev server (Three.js scene) |
 | `npm run verify:opencv` | Run OpenCV verification inside `.venv` |
 
@@ -58,7 +62,7 @@ PYTHON=/path/to/python3.12 npm run setup:python
 
 ### `@three-camera-lab/core`
 
-Pure camera mathematics. No Three.js dependency. Implements pinhole projection and Brown-Conrady forward distortion with golden tests against OpenCV fixtures.
+Pure camera mathematics. No Three.js dependency. Implements pinhole projection, Brown-Conrady, and rational polynomial forward distortion with golden tests against OpenCV fixtures.
 
 ### `@three-camera-lab/viz`
 
@@ -74,12 +78,13 @@ Python/OpenCV ground truth. Generates golden test vectors and provides verificat
 |------|--------|-------------|
 | 1. Coordinate conventions | ✅ Done | [docs/coordinate-conventions.md](./docs/coordinate-conventions.md) |
 | 2. Pinhole + golden tests | ✅ Done | `projection/pinhole.ts`, `reference/fixtures/pinhole/` |
-| 3. Brown-Conrady distortion | ✅ Done | `distortion/brown-conrady.ts`, `reference/fixtures/brown-conrady/` |
-| 4. Rational + fisheye models | 🔄 Next | Rational polynomial, then OpenCV fisheye |
-| 5. Viz per model | ⬜ Pending | Grid / overlay demos using `core` |
-| 6. Custom cameras / shaders | ⬜ Pending | `packages/viz/cameras`, `shaders` |
+| 3. Brown-Conrady distortion | ✅ Done | [models/brown-conrady.md](./docs/models/brown-conrady.md) |
+| 4. Rational polynomial | ✅ Done | [models/rational.md](./docs/models/rational.md) |
+| 5. OpenCV fisheye | 🔄 Next | Plan: [docs/plans/phase-5-fisheye.md](./docs/plans/phase-5-fisheye.md) |
+| 6. Viz per model | ⬜ Pending | Grid / overlay demos using `core` |
+| 7. Custom cameras / shaders | ⬜ Pending | `packages/viz/cameras`, `shaders` |
 
-Detailed phase checklist: [docs/progress.md](./docs/progress.md).
+Detailed phase checklist: [docs/progress.md](./docs/progress.md) · Plans: [docs/plans/](./docs/plans/)
 
 ## Testing strategy
 
@@ -94,9 +99,11 @@ Three layers, all model-scoped:
 
 ### 2. Golden tests (Python-generated fixtures)
 
-Primary correctness gate. Each model gets its own fixture subdirectory and golden test file.
+Primary correctness gate. Each model has its own fixture subdirectory under `reference/fixtures/` and golden test file.
 
-Pinhole fixture schema (in use):
+Shared fixture fields: `model`, `opencv_version`, `camera_matrix`, `dist_coeffs`, `points_3d`, `expected_pixels`, `tolerance`.
+
+Pinhole example (`dist_coeffs` length 5; rational uses 8; fisheye will use 4):
 
 ```json
 {
@@ -132,8 +139,8 @@ Authoritative reference: [docs/coordinate-conventions.md](./docs/coordinate-conv
 | Pixel center / sub-pixel output from `cv2.projectPoints` | ✅ Verified and documented |
 | Behind-camera points (`Z ≤ 0`) | ✅ Policy set (exclude from fixtures) |
 | Golden-test floating-point tolerance | ✅ `1e-4` px absolute |
-| Distortion coefficient layouts | ⬜ Rational/fisheye pending; [Brown-Conrady documented](./models/brown-conrady.md) |
-| Fisheye vs pinhole code paths | ⬜ Planned — separate modules and docs |
+| Distortion coefficient layouts | ✅ Brown-Conrady + rational documented; fisheye Phase 5 |
+| Fisheye vs pinhole code paths | ⬜ Phase 5 — separate module; plan at [docs/plans/phase-5-fisheye.md](./docs/plans/phase-5-fisheye.md) |
 
 ## License
 

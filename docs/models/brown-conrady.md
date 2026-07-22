@@ -16,6 +16,8 @@ Implementation: `packages/core/src/distortion/brown-conrady.ts`
 
 Golden fixtures: `reference/fixtures/brown-conrady/`
 
+Phase plan: [docs/plans/phase-3-brown-conrady.md](../plans/phase-3-brown-conrady.md)
+
 ## Pipeline
 
 ```
@@ -69,5 +71,5 @@ Regenerate: `npm run generate:fixtures`
 ## Not in scope (this phase)
 
 - Inverse / undistortion
-- Rational polynomial model (Phase 4)
+- Rational polynomial model — see [docs/models/rational.md](../models/rational.md) (Phase 4)
 - Four-coefficient variant (`k3` omitted) — fixtures always supply five values

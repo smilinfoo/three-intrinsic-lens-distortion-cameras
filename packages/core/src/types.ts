@@ -49,6 +49,29 @@ export interface BrownConradyFixture {
   readonly tolerance: Tolerance;
 }
 
+/** OpenCV rational polynomial distortion coefficients (8-parameter model). */
+export interface RationalCoeffs {
+  readonly k1: number;
+  readonly k2: number;
+  readonly p1: number;
+  readonly p2: number;
+  readonly k3: number;
+  readonly k4: number;
+  readonly k5: number;
+  readonly k6: number;
+}
+
+/** Golden fixture schema for rational polynomial projection tests. */
+export interface RationalFixture {
+  readonly model: 'rational';
+  readonly opencv_version: string;
+  readonly camera_matrix: readonly (readonly number[])[];
+  readonly dist_coeffs: readonly number[];
+  readonly points_3d: readonly (readonly number[])[];
+  readonly expected_pixels: readonly (readonly number[])[];
+  readonly tolerance: Tolerance;
+}
+
 export function cameraMatrixFromArray(matrix: readonly (readonly number[])[]): CameraMatrix {
   return {
     fx: matrix[0][0],
@@ -65,6 +88,19 @@ export function brownConradyFromArray(dist: readonly number[]): BrownConradyCoef
     p1: dist[2],
     p2: dist[3],
     k3: dist[4] ?? 0,
+  };
+}
+
+export function rationalFromArray(dist: readonly number[]): RationalCoeffs {
+  return {
+    k1: dist[0],
+    k2: dist[1],
+    p1: dist[2],
+    p2: dist[3],
+    k3: dist[4] ?? 0,
+    k4: dist[5] ?? 0,
+    k5: dist[6] ?? 0,
+    k6: dist[7] ?? 0,
   };
 }
 
