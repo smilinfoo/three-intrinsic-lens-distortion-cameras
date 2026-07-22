@@ -73,6 +73,85 @@ Python/OpenCV ground truth. Generates golden test vectors and provides verificat
 4. Three.js visualization per model
 5. Custom cameras and shader implementations
 
+## Implementation order
+Build vertically by model, always with fixtures before viz.
+
+Phase	Deliverable	Why this order
+0 — Scaffold
+Monorepo, vitest, Python env, empty conventions.md skeleton
+Establishes contracts before code
+1 — Conventions + types
+docs/conventions.md, types.ts, coords/opencv.ts
+Prevents silent sign/frame bugs
+2 — Pinhole only
+projection/pinhole.ts + Python fixtures + golden tests
+Simplest end-to-end pipeline
+3 — Brown-Conrady
+Forward distortion + golden vs cv2.projectPoints
+Most common model; validates distortion pipeline
+4 — Rational polynomial
+Same pattern; extend fixture schema
+Builds on Brown-Conrady structure
+5 — OpenCV fisheye
+Separate module (different equations + coeff layout)
+Proves “one folder per model” scales
+6 — Viz (minimal)
+One grid demo per model using core
+Visual sanity check after numerics pass
+7 — Undistortion / inverse
+Numerical or iterative inverse per model
+Harder; only after forward is solid
+8 — Three.js camera / shaders
+packages/viz/cameras, shaders
+Rendering is last; math is already trusted
+Within each phase: Python fixture → JS forward impl → golden test → (optional) tiny viz example.
+
+
+
+## Testing strategy
+Three layers, all model-scoped:
+
+1. Unit tests (JavaScript, hand-crafted)
+Origin, points on optical axis, points at normalized plane edge
+Zero distortion → pinhole identity
+Symmetry cases where the model is symmetric
+Known degeneracies (e.g. z ≤ 0 behind camera — document expected behavior)
+2. Golden tests (Python-generated fixtures)
+Primary correctness gate.
+
+Fixture schema (example):
+
+{
+  "model": "brown-conrady",
+  "opencv_version": "4.x.x",
+  "camera_matrix": [[fx, 0, cx], [0, fy, cy], [0, 0, 1]],
+  "dist_coeffs": [k1, k2, p1, p2, k3],
+  "points_3d": [[x, y, z], ...],
+  "expected_pixels": [[u, v], ...],
+  "tolerance": { "abs": 1e-4, "rel": 1e-6 }
+}
+Each distortion model gets its own fixture subdirectory and golden test file.
+
+
+## 3. Cross-check scripts (optional, later)
+Random parameter sampling in Python → batch compare in JS
+Report max/mean error per model
+Useful for regression when refactoring
+What not to test in viz: numerical correctness. Viz is for intuition; core golden tests are the gate.
+
+CI suggestion (later): generate fixtures (cached) → vitest golden → typecheck. Python runs only when fixture generator or OpenCV pin changes.
+
+
+## Convention documentation (what conventions.md must nail early)
+Before implementing pinhole, document explicitly:
+
+OpenCV camera coordinates vs Three.js camera coordinates (diagram + transform matrix).
+When distortion is applied (normalized plane, before K).
+Coefficient ordering for each model (match OpenCV docs exactly).
+Pixel center convention (0.5 offset or not — match OpenCV).
+Behind-camera points — clamp, NaN, or exclude from fixtures.
+Fisheye vs pinhole — separate code paths, separate docs (don’t unify).
+
 ## License
 
 Private — educational project.
