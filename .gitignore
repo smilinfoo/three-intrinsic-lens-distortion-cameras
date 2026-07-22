@@ -1,0 +1,16 @@
+node_modules/
+dist/
+*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# OS
+.DS_Store
+
+# Generated fixtures (uncomment when generator is added)
+# reference/fixtures/**/*.json

@@ -1,0 +1,18 @@
+{
+  "name": "three-camera-lab",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "setup": "npm install && npm run setup:python",
+    "setup:python": "bash scripts/setup-python.sh",
+    "test": "npm run test --workspaces --if-present",
+    "dev": "npm run dev -w @three-camera-lab/viz",
+    "build": "npm run build --workspaces --if-present",
+    "verify:opencv": "bash scripts/verify-opencv.sh"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
