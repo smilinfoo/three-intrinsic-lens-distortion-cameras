@@ -15,9 +15,9 @@ Last updated: 2026-07-22
 
 ## Current position
 
-**Phase 4 — Rational polynomial** ✅ complete
+**Phase 5 — OpenCV fisheye** ✅ complete
 
-Phases 0–4 are done. **Next:** plan then implement Phase 5 (OpenCV fisheye).
+All forward distortion models (Phases 2–5) are implemented. **Next:** Phase 6 viz (minimal projection overlays).
 
 ---
 
@@ -30,8 +30,8 @@ Phases 0–4 are done. **Next:** plan then implement Phase 5 (OpenCV fisheye).
 | **2 — Pinhole** | [plans/phase-2-pinhole.md](./plans/phase-2-pinhole.md) | ✅ Done |
 | **3 — Brown-Conrady** | [plans/phase-3-brown-conrady.md](./plans/phase-3-brown-conrady.md) | ✅ Done |
 | **4 — Rational polynomial** | [plans/phase-4-rational.md](./plans/phase-4-rational.md) | ✅ Done |
-| **5 — OpenCV fisheye** | [plans/phase-5-fisheye.md](./plans/phase-5-fisheye.md) | ⬜ **Plan next** |
-| **6 — Viz (minimal)** | *(to be added)* | ⬜ Not started |
+| **5 — OpenCV fisheye** | [plans/phase-5-fisheye.md](./plans/phase-5-fisheye.md) | ✅ Done |
+| **6 — Viz (minimal)** | *(to be added)* | ⬜ **Next** |
 | **7 — Undistortion / inverse** | *(to be added)* | ⬜ Not started |
 | **8 — Three.js camera / shaders** | *(to be added)* | ⬜ Not started |
 
@@ -39,13 +39,14 @@ Phases 0–4 are done. **Next:** plan then implement Phase 5 (OpenCV fisheye).
 
 ## Implemented models
 
-| Model | Core module | Fixtures | Tests |
-|-------|-------------|----------|-------|
-| Pinhole | `projection/pinhole.ts` | `reference/fixtures/pinhole/` | unit + golden |
-| Brown-Conrady | `distortion/brown-conrady.ts` | `reference/fixtures/brown-conrady/` | unit + golden |
-| Rational | `distortion/rational.ts` | `reference/fixtures/rational/` | unit + golden |
+| Model | Core module | OpenCV API | Fixtures |
+|-------|-------------|------------|----------|
+| Pinhole | `projection/pinhole.ts` | `cv2.projectPoints` | `pinhole/` |
+| Brown-Conrady | `distortion/brown-conrady.ts` | `cv2.projectPoints` | `brown-conrady/` |
+| Rational | `distortion/rational.ts` | `cv2.projectPoints` | `rational/` |
+| Fisheye | `distortion/fisheye.ts` | `cv2.fisheye.projectPoints` | `fisheye/` |
 
-**33 tests passing** (8 test files).
+**41 tests passing** (10 test files).
 
 ---
 
@@ -53,7 +54,7 @@ Phases 0–4 are done. **Next:** plan then implement Phase 5 (OpenCV fisheye).
 
 ```bash
 npm run setup              # JS + Python .venv
-npm test                   # 33 tests
+npm test                   # 41 tests
 npm run generate:fixtures  # Regenerate JSON from OpenCV
 npm run verify:opencv      # Python smoke test
 npm run dev                # Three.js scene
@@ -63,26 +64,14 @@ npm run dev                # Three.js scene
 
 ## Next step (start here)
 
-### 1. Plan Phase 5 (no code yet)
+**Phase 6 — Viz (minimal projection overlays)**
 
-Fill in [plans/phase-5-fisheye.md](./plans/phase-5-fisheye.md). Fisheye differs from prior models:
-
-- API: `cv2.fisheye.projectPoints` (not `cv2.projectPoints`)
-- Coefficients: `[k1, k2, k3, k4]`
-- Separate equations — do not merge into Brown-Conrady/rational modules
-
-### 2. Then implement
-
-Fixtures → `distortion/fisheye.ts` → tests → `docs/models/fisheye.md`. No viz, no undistortion.
+1. Add `docs/plans/phase-6-viz.md`.
+2. Per-model grid/overlay demo using `core` projection functions.
+3. Visual sanity check only — golden tests remain the correctness gate.
 
 ---
 
-## Prompts
+## Prompt to paste when resuming
 
-**To plan Phase 5:**
-
-> Plan but do not implement Phase 5 OpenCV fisheye. Read `docs/progress.md`, `docs/coordinate-conventions.md`, and completed plans in `docs/plans/`. Save to `docs/plans/phase-5-fisheye.md` and update progress. No viz or undistortion.
-
-**To implement Phase 5 (after plan is approved):**
-
-> Implement Phase 5 OpenCV fisheye per `docs/plans/phase-5-fisheye.md`: fixtures via `cv2.fisheye.projectPoints`, then `distortion/fisheye.ts`, unit + golden tests, and `docs/models/fisheye.md`. No viz or undistortion.
+> Continue three-camera-lab. Read `docs/progress.md`. Phase 5 fisheye is complete. Plan Phase 6 minimal viz overlays per model.

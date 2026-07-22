@@ -132,6 +132,57 @@ def write_brown_conrady_fixtures() -> None:
     )
 
 
+def project_fisheye_points(
+    points_3d: list[list[float]],
+    camera_matrix: np.ndarray,
+    dist_coeffs: list[float],
+) -> list[list[float]]:
+    """Project 3D points using cv2.fisheye.projectPoints (identity extrinsics)."""
+    object_points = np.array([points_3d], dtype=np.float64)
+    rvec = np.zeros((3, 1), dtype=np.float64)
+    tvec = np.zeros((3, 1), dtype=np.float64)
+    d = np.array(dist_coeffs, dtype=np.float64).reshape(4, 1)
+
+    image_points, _ = cv2.fisheye.projectPoints(
+        object_points, rvec, tvec, camera_matrix, d
+    )
+    return image_points.reshape(-1, 2).tolist()
+
+
+def _fisheye_fixture(
+    dist_coeffs: list[float],
+    points_3d: list[list[float]] | None = None,
+    camera_matrix: np.ndarray | None = None,
+) -> dict:
+    k = camera_matrix if camera_matrix is not None else STANDARD_CAMERA_MATRIX
+    points = points_3d if points_3d is not None else STANDARD_POINTS_3D
+    return {
+        "model": "fisheye",
+        "opencv_version": cv2.__version__,
+        "camera_matrix": k.tolist(),
+        "dist_coeffs": dist_coeffs,
+        "points_3d": points,
+        "expected_pixels": project_fisheye_points(points, k, dist_coeffs),
+        "tolerance": DEFAULT_TOLERANCE,
+    }
+
+
+def fisheye_basic_fixture() -> dict:
+    return _fisheye_fixture([-0.08, 0.01, -0.002, 0.0005])
+
+
+def fisheye_mild_fixture() -> dict:
+    return _fisheye_fixture([-0.03, 0.001, 0.0, 0.0])
+
+
+def fisheye_zero_coeff_fixture() -> dict:
+    return _fisheye_fixture([0.0, 0.0, 0.0, 0.0])
+
+
+def fisheye_wide_angle_fixture() -> dict:
+    return _fisheye_fixture([-0.15, 0.02, -0.004, 0.001])
+
+
 def write_rational_fixtures() -> None:
     out_dir = FIXTURES_DIR / "rational"
     _write_fixture(out_dir / "basic.json", rational_basic_fixture())
@@ -144,10 +195,19 @@ def write_rational_fixtures() -> None:
     )
 
 
+def write_fisheye_fixtures() -> None:
+    out_dir = FIXTURES_DIR / "fisheye"
+    _write_fixture(out_dir / "basic.json", fisheye_basic_fixture())
+    _write_fixture(out_dir / "mild.json", fisheye_mild_fixture())
+    _write_fixture(out_dir / "zero-coeff.json", fisheye_zero_coeff_fixture())
+    _write_fixture(out_dir / "wide-angle.json", fisheye_wide_angle_fixture())
+
+
 def main() -> int:
     write_pinhole_fixtures()
     write_brown_conrady_fixtures()
     write_rational_fixtures()
+    write_fisheye_fixtures()
     return 0
 
 

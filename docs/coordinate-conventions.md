@@ -264,7 +264,7 @@ Coefficient order must match OpenCV exactly. Per-model details: [docs/models/](.
 | Pinhole (none) | `cv2.projectPoints` | `[0, 0, 0, 0, 0]` | ✅ Implemented |
 | Brown-Conrady (plumb bob) | `cv2.projectPoints` | `[k1, k2, p1, p2, k3]` | ✅ [docs/models/brown-conrady.md](./models/brown-conrady.md) |
 | Rational | `cv2.projectPoints` | `[k1, k2, p1, p2, k3, k4, k5, k6]` | ✅ [docs/models/rational.md](./models/rational.md) |
-| Fisheye | `cv2.fisheye.projectPoints` | `[k1, k2, k3, k4]` | Phase 5 |
+| Fisheye | `cv2.fisheye.projectPoints` | `[k1, k2, k3, k4]` | ✅ [docs/models/fisheye.md](./models/fisheye.md) |
 
 Fisheye uses a separate OpenCV API and separate JS module — do not unify with pinhole/Brown-Conrady paths.
 
