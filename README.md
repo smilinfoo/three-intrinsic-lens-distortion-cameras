@@ -2,6 +2,8 @@
 
 Educational laboratory for implementing OpenCV-compatible camera models in JavaScript, with Python/OpenCV as the numerical reference.
 
+**Session progress:** see [docs/progress.md](./docs/progress.md) for current phase and next steps.
+
 ## Project layout
 
 ```
@@ -56,7 +58,7 @@ PYTHON=/path/to/python3.12 npm run setup:python
 
 ### `@three-camera-lab/core`
 
-Pure camera mathematics. No Three.js dependency. Camera model implementations will be added incrementally with golden tests against Python-generated fixtures.
+Pure camera mathematics. No Three.js dependency. Currently implements pinhole projection with golden tests against OpenCV fixtures. Distortion models will be added incrementally.
 
 ### `@three-camera-lab/viz`
 
@@ -68,55 +70,69 @@ Python/OpenCV ground truth. Generates golden test vectors and provides verificat
 
 ## Development order
 
-1. Document coordinate conventions (`docs/coordinate-conventions.md`)
-2. Pinhole projection + golden tests
-3. Distortion models (Brown-Conrady, rational, fisheye) one at a time
-4. Three.js visualization per model
-5. Custom cameras and shader implementations
+| Step | Status | Deliverable |
+|------|--------|-------------|
+| 1. Coordinate conventions | ✅ Done | [docs/coordinate-conventions.md](./docs/coordinate-conventions.md) |
+| 2. Pinhole + golden tests | ✅ Done | `projection/pinhole.ts`, `reference/fixtures/pinhole/` |
+| 3. Distortion models | 🔄 Next | Brown-Conrady, rational, fisheye — one at a time |
+| 4. Viz per model | ⬜ Pending | Grid / overlay demos using `core` |
+| 5. Custom cameras / shaders | ⬜ Pending | `packages/viz/cameras`, `shaders` |
+
+Detailed phase checklist: [docs/progress.md](./docs/progress.md).
 
 ## Testing strategy
+
 Three layers, all model-scoped:
 
-1. Unit tests (JavaScript, hand-crafted)
-Origin, points on optical axis, points at normalized plane edge
-Zero distortion → pinhole identity
-Symmetry cases where the model is symmetric
-Known degeneracies (e.g. z ≤ 0 behind camera — document expected behavior)
-2. Golden tests (Python-generated fixtures)
-Primary correctness gate.
+### 1. Unit tests (JavaScript, hand-crafted)
 
-Fixture schema (example):
+- Origin, points on optical axis, points at normalized plane edge
+- Zero distortion → pinhole identity
+- Symmetry cases where the model is symmetric
+- Known degeneracies (e.g. `Z ≤ 0` behind camera — see convention doc)
 
+### 2. Golden tests (Python-generated fixtures)
+
+Primary correctness gate. Each model gets its own fixture subdirectory and golden test file.
+
+Pinhole fixture schema (in use):
+
+```json
 {
-  "model": "brown-conrady",
-  "opencv_version": "4.x.x",
+  "model": "pinhole",
+  "opencv_version": "5.0.0",
   "camera_matrix": [[fx, 0, cx], [0, fy, cy], [0, 0, 1]],
-  "dist_coeffs": [k1, k2, p1, p2, k3],
+  "dist_coeffs": [0, 0, 0, 0, 0],
   "points_3d": [[x, y, z], ...],
   "expected_pixels": [[u, v], ...],
   "tolerance": { "abs": 1e-4, "rel": 1e-6 }
 }
-Each distortion model gets its own fixture subdirectory and golden test file.
+```
 
+### 3. Cross-check scripts (optional, later)
 
-## 3. Cross-check scripts (optional, later)
-Random parameter sampling in Python → batch compare in JS
-Report max/mean error per model
-Useful for regression when refactoring
-What not to test in viz: numerical correctness. Viz is for intuition; core golden tests are the gate.
+- Random parameter sampling in Python → batch compare in JS
+- Report max/mean error per model
+- Useful for regression when refactoring
 
-CI suggestion (later): generate fixtures (cached) → vitest golden → typecheck. Python runs only when fixture generator or OpenCV pin changes.
+**What not to test in viz:** numerical correctness. Viz is for intuition; `core` golden tests are the gate.
 
+**CI suggestion (later):** generate fixtures (cached) → vitest golden → typecheck. Python runs only when fixture generator or OpenCV pin changes.
 
-## Convention documentation (what conventions.md must nail early)
-Before implementing pinhole, document explicitly:
+## Convention documentation
 
-OpenCV camera coordinates vs Three.js camera coordinates (diagram + transform matrix).
-When distortion is applied (normalized plane, before K).
-Coefficient ordering for each model (match OpenCV docs exactly).
-Pixel center convention (0.5 offset or not — match OpenCV).
-Behind-camera points — clamp, NaN, or exclude from fixtures.
-Fisheye vs pinhole — separate code paths, separate docs (don’t unify).
+Authoritative reference: [docs/coordinate-conventions.md](./docs/coordinate-conventions.md).
+
+| Topic | Status |
+|-------|--------|
+| OpenCV vs Three.js camera frames (diagram + transform matrix) | ✅ Documented |
+| When distortion is applied (normalized plane, before `K`) | ✅ Documented |
+| Pinhole projection pipeline + fixture assumptions | ✅ Documented |
+| Pixel center / sub-pixel output from `cv2.projectPoints` | ✅ Verified and documented |
+| Behind-camera points (`Z ≤ 0`) | ✅ Policy set (exclude from fixtures) |
+| Golden-test floating-point tolerance | ✅ `1e-4` px absolute |
+| Distortion coefficient layouts | ⬜ Summary table only; per-model notes in Phase 3+ |
+| Fisheye vs pinhole code paths | ⬜ Planned — separate modules and docs |
 
 ## License
 

@@ -1,6 +1,6 @@
 # Progress
 
-Last updated: 2026-07-22
+Last updated: 2026-07-22 (docs refreshed after Phase 2 merge)
 
 Use this file to resume work. The detailed plan lives in [README.md](../README.md).
 
