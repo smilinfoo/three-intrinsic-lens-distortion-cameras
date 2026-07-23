@@ -63,7 +63,7 @@ All planned phases (0–8) implemented.
 | GLSL distortion mirrors | `shaders/chunks/distortion.glsl.ts` |
 | `pixelToThreeRayFromCamera()` | `cameras/pixelToRay.ts` |
 
-**3 tests** in `viz`. **`npm run dev`** — split demo: 2D reference canvas + Three.js sensor view (grid lines, points, instanced markers).
+**24 tests** in `viz`. **`npm run dev`** — split demo: 2D reference canvas + Three.js sensor view (grid lines, points, instanced markers).
 
 ---
 
