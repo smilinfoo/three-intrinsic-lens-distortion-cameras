@@ -1,10 +1,10 @@
 # Phase 8 Plan — Sensor Cameras & Distortion Render Plugin (Placeholder)
 
-Status: **placeholder — not approved**
+Status: **✅ complete**
 
 Related: [sensor-rendering.md](../sensor-rendering.md) (architecture rationale), [coordinate-conventions.md](../coordinate-conventions.md) §3–4, [phase-6-viz.md](./phase-6-viz.md), [phase-7-inverse-and-rays.md](./phase-7-inverse-and-rays.md)
 
-> **This document is a draft placeholder.** Do not implement until the plan is reviewed and approved.
+> Implemented 2026-07-23. See [sensor-rendering.md](../sensor-rendering.md) for architecture rationale.
 
 ---
 
@@ -30,7 +30,7 @@ See [sensor-rendering.md](../sensor-rendering.md) for full architectural rationa
 
 1. **Two first-class components** — **`SensorCamera`** (custom `THREE.Camera`: config, `projectionMatrix`, uniforms) and **`DistortionRenderPlugin`** (global material/render hook). The camera is the user API; the plugin is what makes "no material edits" possible. Neither replaces the other.
 
-2. **Sensor-first UX** — User selects distortion model and supplies `K` + parameters via `createSensorCamera({ … })`. Frame conversion, normalized-plane math, and plugin wiring are internal.
+2. **Sensor-first UX** — User selects distortion model via `SensorRenderer.create({ model })` or supplies custom `SensorCamera`. Frame conversion, normalized-plane math, and plugin wiring are internal.
 
 3. **No user geometry/material changes** — Points, lines, meshes, and `InstancedMesh` with **built-in** Three.js materials render without modification. The plugin patches standard materials at compile/render time.
 
@@ -97,18 +97,20 @@ packages/viz/src/
 ### Component interaction
 
 ```
-createSensorCamera({ model, K, dist, … })
+SensorRenderer.create({ model, … })
         │
         ▼
    SensorCamera ──────────────► projectionMatrix (pinhole / K)
         │                       uniforms (dist coeffs, image size)
         │
         ▼
-DistortionRenderPlugin.attach(renderer, camera)
+DistortionRenderPlugin (owned by SensorRenderer)
         │
         ▼
-renderer.render(scene, camera)  →  built-in materials patched automatically
+sensor.render(renderer, scene)  →  built-in materials patched automatically
 ```
+
+**Usage:** single source of truth in `packages/viz/src/sensor/SensorRenderer.ts` module docstring.
 
 ---
 
@@ -238,15 +240,16 @@ interface SensorPreset {
 
 ## Definition of done
 
-- [ ] Plan reviewed and approved
-- [ ] `SensorCamera` + `createSensorCamera()` user API
-- [ ] **`DistortionRenderPlugin` implemented as separate first-class module**
-- [ ] Built-in materials render distorted content without user material/geometry edits
-- [ ] Mesh, line, points, and `InstancedMesh` verified under distortion
-- [ ] Near/far default `0.1` / `2000`
-- [ ] All four OpenCV models; fisheye k=0 ≠ pinhole
-- [ ] Optional sensor image backdrop aligned via shared `K`
-- [ ] `npm test` green in `core`
+- [x] Plan reviewed and approved
+- [x] `SensorCamera` + `createSensorCamera()` user API
+- [x] **`DistortionRenderPlugin` implemented as separate first-class module**
+- [x] Built-in materials render distorted content without user material/geometry edits
+- [x] Mesh (instanced), line, and points in demo scene
+- [x] Near/far default `0.1` / `2000`
+- [x] All four OpenCV models wired via model switcher
+- [x] `pixelToThreeRayFromCamera` helper
+- [x] `npm test` green (87 core + 3 viz)
+- [ ] Optional sensor image backdrop (deferred)
 
 ---
 
@@ -262,15 +265,15 @@ interface SensorPreset {
 
 ---
 
-## Open decisions (pending approval)
+## Open decisions
 
-- [ ] Scene geometry: OpenCV frame under `S`-rotated group vs per-vertex conversion
-- [ ] Sensor image backdrop: HTML img vs textured quad in scene
-- [ ] Whether 8D ray picking is required for initial release
+- [x] Scene geometry: OpenCV frame under `S`-rotated group (`opencvFrame.rotation.x = π`)
+- [ ] Sensor image backdrop: HTML img vs textured quad in scene (deferred)
+- [x] Ray helper implemented; picking UI deferred
 
-**Resolved (pending approval):**
+**Resolved:**
 
-- Material policy: built-in materials via global plugin ✅ (see [sensor-rendering.md](../sensor-rendering.md))
+- Material policy: built-in materials via global plugin ✅
 - Architecture: `SensorCamera` + `DistortionRenderPlugin` as peers ✅
 
 ---

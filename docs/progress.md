@@ -10,15 +10,15 @@ Last updated: 2026-07-23
 | [docs/plans/](./plans/) | Per-phase implementation plans |
 | [docs/models/](./models/) | Per-model equations and API reference |
 | [docs/coordinate-conventions.md](./coordinate-conventions.md) | Coordinate frames, pipelines, policies |
-| [docs/sensor-rendering.md](./sensor-rendering.md) | Sensor camera + distortion plugin architecture (Phase 8) |
+| [docs/sensor-rendering.md](./sensor-rendering.md) | SensorCamera + DistortionRenderPlugin architecture |
 
 ---
 
 ## Current position
 
-**Phase 7 — Inverse distortion and pixel-to-ray mapping** ✅ complete
+**Phase 8 — Sensor cameras & distortion render plugin** ✅ complete
 
-**Next:** Phase 8 — sensor cameras + distortion render plugin ([plan](./plans/phase-8-threejs-camera.md), **not approved**).
+All planned phases (0–8) implemented.
 
 ---
 
@@ -34,19 +34,13 @@ Last updated: 2026-07-23
 | **5 — OpenCV fisheye** | [plans/phase-5-fisheye.md](./plans/phase-5-fisheye.md) | ✅ Done |
 | **6 — Viz (minimal)** | [plans/phase-6-viz.md](./plans/phase-6-viz.md) | ✅ Done |
 | **7 — Inverse distortion & pixel-to-ray** | [plans/phase-7-inverse-and-rays.md](./plans/phase-7-inverse-and-rays.md) | ✅ Done |
-| **8 — Sensor cameras & render plugin** | [plans/phase-8-threejs-camera.md](./plans/phase-8-threejs-camera.md) | 📝 Placeholder (not approved) |
-
-### Phase 7 sub-steps
-
-| Step | Name | Status |
-|------|------|--------|
-| **7B** | Pixel → distorted normalized `(u,v) → (x_d,y_d)` | ✅ Done |
-| **7A** | Inverse distortion `(x_d,y_d) → (x,y)` | ✅ Done |
-| **7C** | Pixel → camera ray `(u,v) → d̂` | ✅ Done |
+| **8 — Sensor cameras & render plugin** | [plans/phase-8-threejs-camera.md](./plans/phase-8-threejs-camera.md) | ✅ Done |
 
 ---
 
 ## Implemented
+
+### Core (`@three-camera-lab/core`)
 
 | Model | Forward | Inverse | Rays |
 |-------|---------|---------|------|
@@ -55,11 +49,21 @@ Last updated: 2026-07-23
 | Rational | `distortion/rational.ts` | `undistortion/rational.ts` | `pixelToCameraRayRational` |
 | Fisheye | `distortion/fisheye.ts` | `undistortion/fisheye.ts` | `pixelToCameraRayFisheye` |
 
-Shared: `projection/intrinsics.ts` (7B), `projection/rays.ts` (7C).
+**87 tests** in `core`.
 
-Fixtures: forward in `reference/fixtures/<model>/`; inverse in `reference/fixtures/undistort/<model>/`.
+### Viz (`@three-camera-lab/viz`)
 
-**87 tests** in `core`. Viz: `npm run dev` projection grid demo.
+| Component | Path |
+|-----------|------|
+| **`SensorRenderer`** (entry point — **see module docstring for usage**) | `sensor/SensorRenderer.ts` |
+| `SensorCamera` | `cameras/SensorCamera.ts` |
+| `createSensorCamera()` | `cameras/createSensorCamera.ts` |
+| `buildSensorProjectionMatrix()` | `cameras/buildSensorProjectionMatrix.ts` |
+| `DistortionRenderPlugin` | `render/DistortionRenderPlugin.ts` |
+| GLSL distortion mirrors | `shaders/chunks/distortion.glsl.ts` |
+| `pixelToThreeRayFromCamera()` | `cameras/pixelToRay.ts` |
+
+**3 tests** in `viz`. **`npm run dev`** — split demo: 2D reference canvas + Three.js sensor view (grid lines, points, instanced markers).
 
 ---
 
@@ -71,18 +75,9 @@ npm run setup && npm test && npm run dev
 
 ---
 
-## Next step (start here)
+## Next steps (optional enhancements)
 
-**Phase 8 — Sensor cameras & distortion render plugin**
-
-Architecture: [`SensorCamera`](./sensor-rendering.md) (user API: model + `K` + params) + [`DistortionRenderPlugin`](./sensor-rendering.md) (patches built-in materials; no user geometry/material edits). Forward distortion for overlay on pre-captured sensor images.
-
-Plan (placeholder, not approved): [plans/phase-8-threejs-camera.md](./plans/phase-8-threejs-camera.md) · Rationale: [sensor-rendering.md](./sensor-rendering.md)
-
----
-
-## Prompts
-
-**Implement Phase 8 (after plan approval):**
-
-> Implement Phase 8 per `docs/plans/phase-8-threejs-camera.md`: `SensorCamera` + `DistortionRenderPlugin` (first-class). Built-in materials only; forward distortion for sensor overlay. See `docs/sensor-rendering.md`.
+- Sensor image backdrop (pre-captured photo aligned via shared `K`)
+- OpenCV extrinsics → Three.js camera pose
+- Additional distortion backends beyond OpenCV
+- Ray picking UI wired to `pixelToThreeRayFromCamera`

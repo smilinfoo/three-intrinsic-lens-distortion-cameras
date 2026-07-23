@@ -19,7 +19,7 @@ Implementation plans for each project phase. **`docs/progress.md`** tracks curre
 | 5 — OpenCV fisheye | [phase-5-fisheye.md](./phase-5-fisheye.md) | [fisheye.md](../models/fisheye.md) | ✅ Done |
 | 6 — Viz (minimal) | [phase-6-viz.md](./phase-6-viz.md) | — | ✅ Done |
 | 7 — Inverse distortion & pixel-to-ray | [phase-7-inverse-and-rays.md](./phase-7-inverse-and-rays.md) | *(extend model docs)* | ✅ Done |
-| 8 — Sensor cameras & render plugin | [phase-8-threejs-camera.md](./phase-8-threejs-camera.md) | [sensor-rendering.md](../sensor-rendering.md) | 📝 Placeholder (not approved) |
+| 8 — Sensor cameras & render plugin | [phase-8-threejs-camera.md](./phase-8-threejs-camera.md) | [sensor-rendering.md](../sensor-rendering.md) | ✅ Done |
 
 ### Phase 7 sub-steps
 

@@ -19,6 +19,7 @@ export function createProjectionDemo(
   canvas: HTMLCanvasElement,
   modelSelect: HTMLSelectElement,
   subtitle: HTMLElement,
+  onModelChange?: (modelId: ModelId) => void,
 ): ProjectionDemo {
   canvas.width = IMAGE_WIDTH;
   canvas.height = IMAGE_HEIGHT;
@@ -58,10 +59,13 @@ export function createProjectionDemo(
   }
 
   modelSelect.addEventListener('change', () => {
-    redraw(modelSelect.value as ModelId);
+    const modelId = modelSelect.value as ModelId;
+    redraw(modelId);
+    onModelChange?.(modelId);
   });
 
   redraw('pinhole');
+  onModelChange?.('pinhole');
 
   return { redraw };
 }

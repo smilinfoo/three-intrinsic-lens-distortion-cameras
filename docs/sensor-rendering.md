@@ -1,6 +1,6 @@
 # Sensor Rendering Architecture
 
-Status: **design reference** (Phase 8 placeholder — not approved for implementation)
+Status: **design reference** (Phase 8 ✅ implemented)
 
 Related: [coordinate-conventions.md](./coordinate-conventions.md), [plans/phase-8-threejs-camera.md](./plans/phase-8-threejs-camera.md)
 
@@ -31,8 +31,8 @@ A custom **`THREE.Camera` subclass alone is not sufficient.** Phase 8 uses two f
 User code                          Internal
 ─────────                          ────────
 scene.add(mesh, lines, points)  →  unchanged
-renderer.render(scene, camera)  →  SensorCamera + DistortionRenderPlugin
-createSensorCamera({ model, K, dist })
+sensor.render(renderer, scene)  →  SensorRenderer → SensorCamera + DistortionRenderPlugin
+SensorRenderer.create({ model })
 ```
 
 **Why not camera-only?**
@@ -107,24 +107,11 @@ The plugin applies patches globally (e.g. via centralized `onBeforeCompile` hand
 
 ---
 
-## Simple user API (conceptual)
+## Usage
 
-Users should not need OpenCV frame math or Three.js axis conventions:
+**Single source of truth:** module docstring in [`packages/viz/src/sensor/SensorRenderer.ts`](../packages/viz/src/sensor/SensorRenderer.ts).
 
-```typescript
-const camera = createSensorCamera({
-  model: 'brown-conrady',
-  imageWidth: 1920,
-  imageHeight: 1080,
-  fx, fy, cx, cy,
-  dist: [k1, k2, p1, p2, k3],
-  // near: 0.1, far: 2000 — defaults match THREE.PerspectiveCamera
-});
-
-// Scene content unchanged:
-scene.add(pointCloud, lineSegments, mesh, instancedMesh);
-renderer.render(scene, camera);
-```
+Do not add usage examples elsewhere — link to that file. The demo (`main.ts`) follows it via `SensorRenderer.create()` and `sensor.render()`.
 
 Background sensor image (HTML `<img>` behind canvas, or textured quad) uses the **same** `K`, image size, and distortion model so overlays align.
 
@@ -140,7 +127,7 @@ New distortion backends add:
 2. A GLSL chunk mirror in `viz/shaders/chunks/`
 3. A `SensorCamera` factory branch + plugin uniform layout
 
-The user-facing API (`createSensorCamera({ model, … })`) stays stable. OpenCV models are the first backend, not the architecture ceiling.
+The user-facing API (`SensorRenderer.create({ model, … })` or custom `SensorCamera`) stays stable. OpenCV models are the first backend, not the architecture ceiling.
 
 ---
 
@@ -176,8 +163,8 @@ Phase 6 left panel remains a correctness reference during Phase 8 manual QA. Pha
 
 | Question | Answer |
 |----------|--------|
-| Are camera extensions the right **user API**? | ✅ Yes — `createSensorCamera`, pass to `render()` |
-| Are camera extensions **sufficient alone**? | ❌ No — need `DistortionRenderPlugin` for distortion without material edits |
+| Are camera extensions the right **user API**? | ✅ Yes — via `SensorRenderer` / `SensorCamera` |
+| Are camera extensions **sufficient alone**? | ❌ No — `SensorRenderer` wraps camera + `DistortionRenderPlugin` |
 | Can users avoid changing meshes/materials? | ✅ Yes, for built-in materials, via global plugin |
 | Correct approach for distorted overlay on sensor image? | ✅ Forward distortion at projection time |
 | OpenCV-only forever? | ❌ No — pluggable model id + core/viz backend per model |

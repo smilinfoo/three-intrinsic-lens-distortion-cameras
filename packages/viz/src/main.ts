@@ -1,4 +1,6 @@
+import { SensorRenderer } from './sensor/SensorRenderer';
 import { createProjectionDemo } from './demo/createProjectionDemo';
+import type { ModelId } from './demo/modelPresets';
 import { createScene } from './scene/createScene';
 
 const app = document.getElementById('app');
@@ -22,7 +24,7 @@ app.innerHTML = `
         <canvas id="projection-canvas"></canvas>
       </section>
       <section class="panel scene-panel">
-        <h2>Three.js scene</h2>
+        <h2>Three.js sensor view</h2>
         <div id="three-container"></div>
       </section>
     </div>
@@ -38,13 +40,19 @@ if (!canvas || !modelSelect || !subtitle || !threeContainer) {
   throw new Error('Missing demo DOM elements');
 }
 
-createProjectionDemo(canvas, modelSelect, subtitle);
+const sensor = SensorRenderer.create({ model: 'pinhole' });
+const sceneSetup = createScene(threeContainer, sensor.getCamera());
 
-const { renderer, scene, camera } = createScene(threeContainer);
+function applySensorModel(modelId: ModelId): void {
+  sensor.setModel(modelId, sceneSetup.scene);
+  sceneSetup.setCamera(sensor.getCamera());
+}
+
+createProjectionDemo(canvas, modelSelect, subtitle, applySensorModel);
 
 function animate(): void {
   requestAnimationFrame(animate);
-  renderer.render(scene, camera);
+  sensor.render(sceneSetup.renderer, sceneSetup.scene);
 }
 
 animate();
@@ -55,7 +63,5 @@ window.addEventListener('resize', () => {
   if (width === 0 || height === 0) {
     return;
   }
-  camera.aspect = width / height;
-  camera.updateProjectionMatrix();
-  renderer.setSize(width, height);
+  sceneSetup.renderer.setSize(width, height);
 });
