@@ -55,7 +55,17 @@ y' = y·radial + p1·(r² + 2·y²) + 2·p2·x·y
 ```typescript
 distortBrownConrady(normalized: Vec2, coeffs: BrownConradyCoeffs): Vec2
 projectBrownConrady(point: Vec3, intrinsics: CameraMatrix, coeffs: BrownConradyCoeffs): Vec2
+undistortBrownConrady(distorted: Vec2, coeffs: BrownConradyCoeffs): Vec2
+pixelToCameraRayBrownConrady(pixel: Vec2, intrinsics: CameraMatrix, coeffs: BrownConradyCoeffs): Vec3
 ```
+
+## Inverse distortion (Phase 7)
+
+OpenCV reference: `cv2.undistortPoints(pixels, K, dist, P=None)` (combined 7B + 7A).
+
+Iterative fixed-point inverse of the forward plumb-bob model (`undistortion/brown-conrady.ts`). Zero coefficients → identity.
+
+Golden fixtures: `reference/fixtures/undistort/brown-conrady/`
 
 ## Golden fixtures
 
@@ -68,8 +78,7 @@ projectBrownConrady(point: Vec3, intrinsics: CameraMatrix, coeffs: BrownConradyC
 
 Regenerate: `npm run generate:fixtures`
 
-## Not in scope (this phase)
+## Not in scope
 
-- Inverse / undistortion
-- Rational polynomial model — see [docs/models/rational.md](../models/rational.md) (Phase 4)
+- Rational polynomial model — see [docs/models/rational.md](../models/rational.md)
 - Four-coefficient variant (`k3` omitted) — fixtures always supply five values

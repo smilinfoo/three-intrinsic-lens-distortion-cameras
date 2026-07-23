@@ -72,7 +72,15 @@ Do **not** cross-check zero-coeff fisheye fixtures against `pinhole/basic.json`.
 ```typescript
 distortFisheye(normalized: Vec2, coeffs: FisheyeCoeffs): Vec2
 projectFisheye(point: Vec3, intrinsics: CameraMatrix, coeffs: FisheyeCoeffs): Vec2
+undistortFisheye(distorted: Vec2, coeffs: FisheyeCoeffs): Vec2
+pixelToCameraRayFisheye(pixel: Vec2, intrinsics: CameraMatrix, coeffs: FisheyeCoeffs): Vec3
 ```
+
+## Inverse distortion (Phase 7)
+
+OpenCV reference: `cv2.fisheye.undistortPoints(pixels, K, D, P=None)`. Iterative fixed-point inverse using forward `distortFisheye`. At k = 0, inverse recovers equidistant normalized coords (not pinhole identity).
+
+Golden fixtures: `reference/fixtures/undistort/fisheye/`
 
 ## Golden fixtures
 
@@ -85,8 +93,7 @@ projectFisheye(point: Vec3, intrinsics: CameraMatrix, coeffs: FisheyeCoeffs): Ve
 
 Regenerate: `npm run generate:fixtures`
 
-## Not in scope (this phase)
+## Not in scope
 
-- Inverse / undistortion (`cv2.fisheye.undistortPoints`)
 - Skew coefficient `alpha ≠ 0`
 - Unification with Brown-Conrady or rational modules

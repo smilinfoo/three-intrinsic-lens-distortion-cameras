@@ -15,9 +15,9 @@ Last updated: 2026-07-22
 
 ## Current position
 
-**Phase 5 — OpenCV fisheye** ✅ complete
+**Phase 7 — Inverse distortion and pixel-to-ray mapping** ✅ complete
 
-All forward distortion models (Phases 2–5) are implemented. **Next:** Phase 6 viz (minimal projection overlays).
+**Next:** Phase 8 — Three.js camera / shaders (not started).
 
 ---
 
@@ -31,47 +31,55 @@ All forward distortion models (Phases 2–5) are implemented. **Next:** Phase 6 
 | **3 — Brown-Conrady** | [plans/phase-3-brown-conrady.md](./plans/phase-3-brown-conrady.md) | ✅ Done |
 | **4 — Rational polynomial** | [plans/phase-4-rational.md](./plans/phase-4-rational.md) | ✅ Done |
 | **5 — OpenCV fisheye** | [plans/phase-5-fisheye.md](./plans/phase-5-fisheye.md) | ✅ Done |
-| **6 — Viz (minimal)** | *(to be added)* | ⬜ **Next** |
-| **7 — Undistortion / inverse** | *(to be added)* | ⬜ Not started |
+| **6 — Viz (minimal)** | [plans/phase-6-viz.md](./plans/phase-6-viz.md) | ✅ Done |
+| **7 — Inverse distortion & pixel-to-ray** | [plans/phase-7-inverse-and-rays.md](./plans/phase-7-inverse-and-rays.md) | ✅ Done |
 | **8 — Three.js camera / shaders** | *(to be added)* | ⬜ Not started |
+
+### Phase 7 sub-steps
+
+| Step | Name | Status |
+|------|------|--------|
+| **7B** | Pixel → distorted normalized `(u,v) → (x_d,y_d)` | ✅ Done |
+| **7A** | Inverse distortion `(x_d,y_d) → (x,y)` | ✅ Done |
+| **7C** | Pixel → camera ray `(u,v) → d̂` | ✅ Done |
 
 ---
 
-## Implemented models
+## Implemented
 
-| Model | Core module | OpenCV API | Fixtures |
-|-------|-------------|------------|----------|
-| Pinhole | `projection/pinhole.ts` | `cv2.projectPoints` | `pinhole/` |
-| Brown-Conrady | `distortion/brown-conrady.ts` | `cv2.projectPoints` | `brown-conrady/` |
-| Rational | `distortion/rational.ts` | `cv2.projectPoints` | `rational/` |
-| Fisheye | `distortion/fisheye.ts` | `cv2.fisheye.projectPoints` | `fisheye/` |
+| Model | Forward | Inverse | Rays |
+|-------|---------|---------|------|
+| Pinhole | `projection/pinhole.ts` | `undistortion/pinhole.ts` | `pixelToCameraRayPinhole` |
+| Brown-Conrady | `distortion/brown-conrady.ts` | `undistortion/brown-conrady.ts` | `pixelToCameraRayBrownConrady` |
+| Rational | `distortion/rational.ts` | `undistortion/rational.ts` | `pixelToCameraRayRational` |
+| Fisheye | `distortion/fisheye.ts` | `undistortion/fisheye.ts` | `pixelToCameraRayFisheye` |
 
-**41 tests passing** (10 test files).
+Shared: `projection/intrinsics.ts` (7B), `projection/rays.ts` (7C).
+
+Fixtures: forward in `reference/fixtures/<model>/`; inverse in `reference/fixtures/undistort/<model>/`.
+
+**87 tests** in `core`. Viz: `npm run dev` projection grid demo.
 
 ---
 
 ## Commands
 
 ```bash
-npm run setup              # JS + Python .venv
-npm test                   # 41 tests
-npm run generate:fixtures  # Regenerate JSON from OpenCV
-npm run verify:opencv      # Python smoke test
-npm run dev                # Three.js scene
+npm run setup && npm test && npm run dev
 ```
 
 ---
 
 ## Next step (start here)
 
-**Phase 6 — Viz (minimal projection overlays)**
+**Phase 8 — Three.js camera / shaders**
 
-1. Add `docs/plans/phase-6-viz.md`.
-2. Per-model grid/overlay demo using `core` projection functions.
-3. Visual sanity check only — golden tests remain the correctness gate.
+Consume `pixelToCameraRay*` output; convert to Three.js frame via `coords/three.ts` when placing rays in the scene graph.
 
 ---
 
-## Prompt to paste when resuming
+## Prompts
 
-> Continue three-camera-lab. Read `docs/progress.md`. Phase 5 fisheye is complete. Plan Phase 6 minimal viz overlays per model.
+**Implement Phase 8:**
+
+> Add custom Three.js camera or shader path that uses `pixelToCameraRay` from core, converting rays to Three.js frame at the viz boundary.

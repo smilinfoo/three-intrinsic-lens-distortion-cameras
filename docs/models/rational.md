@@ -51,7 +51,15 @@ y' = y·radial + p1·(r² + 2·y²) + 2·p2·x·y
 ```typescript
 distortRational(normalized: Vec2, coeffs: RationalCoeffs): Vec2
 projectRational(point: Vec3, intrinsics: CameraMatrix, coeffs: RationalCoeffs): Vec2
+undistortRational(distorted: Vec2, coeffs: RationalCoeffs): Vec2
+pixelToCameraRayRational(pixel: Vec2, intrinsics: CameraMatrix, coeffs: RationalCoeffs): Vec3
 ```
+
+## Inverse distortion (Phase 7)
+
+OpenCV reference: `cv2.undistortPoints` with 8-coeff vector. Iterative fixed-point inverse using forward `distortRational`. When k4–k6 = 0, matches Brown-Conrady inverse behavior.
+
+Golden fixtures: `reference/fixtures/undistort/rational/`
 
 ## Golden fixtures
 
@@ -64,8 +72,7 @@ projectRational(point: Vec3, intrinsics: CameraMatrix, coeffs: RationalCoeffs): 
 
 Regenerate: `npm run generate:fixtures`
 
-## Not in scope (this phase)
+## Not in scope
 
-- Inverse / undistortion
 - 12-coefficient thin-prism / tilt model
 - Five-coefficient vectors (use Brown-Conrady module instead)

@@ -27,6 +27,7 @@ STANDARD_POINTS_3D = [
 ZERO_DIST_5 = [0.0, 0.0, 0.0, 0.0, 0.0]
 ZERO_DIST_8 = [0.0] * 8
 DEFAULT_TOLERANCE = {"abs": 1e-4, "rel": 1e-6}
+NORMALIZED_TOLERANCE = {"abs": 1e-5, "rel": 1e-6}
 
 BROWN_CONRADY_BASIC = [-0.2, 0.05, 0.001, -0.001, 0.001]
 
@@ -203,11 +204,95 @@ def write_fisheye_fixtures() -> None:
     _write_fixture(out_dir / "wide-angle.json", fisheye_wide_angle_fixture())
 
 
+def undistort_points(
+    pixels: list[list[float]],
+    camera_matrix: np.ndarray,
+    dist_coeffs: list[float],
+) -> list[list[float]]:
+    """Undistort pixel coordinates to normalized plane via cv2.undistortPoints."""
+    image_points = np.array(pixels, dtype=np.float64).reshape(-1, 1, 2)
+    dist = np.zeros((max(8, len(dist_coeffs)), 1), dtype=np.float64)
+    dist[: len(dist_coeffs), 0] = dist_coeffs
+    normalized = cv2.undistortPoints(image_points, camera_matrix, dist, P=None)
+    return normalized.reshape(-1, 2).tolist()
+
+
+def undistort_fisheye_points(
+    pixels: list[list[float]],
+    camera_matrix: np.ndarray,
+    dist_coeffs: list[float],
+) -> list[list[float]]:
+    """Undistort pixel coordinates via cv2.fisheye.undistortPoints."""
+    image_points = np.array(pixels, dtype=np.float64).reshape(-1, 1, 2)
+    d = np.array(dist_coeffs, dtype=np.float64).reshape(4, 1)
+    normalized = cv2.fisheye.undistortPoints(
+        image_points, camera_matrix, d, P=None
+    )
+    return normalized.reshape(-1, 2).tolist()
+
+
+def _undistort_fixture(
+    model: str,
+    dist_coeffs: list[float],
+    points_3d: list[list[float]] | None = None,
+    camera_matrix: np.ndarray | None = None,
+    *,
+    use_fisheye: bool = False,
+) -> dict:
+    k = camera_matrix if camera_matrix is not None else STANDARD_CAMERA_MATRIX
+    points = points_3d if points_3d is not None else STANDARD_POINTS_3D
+    if use_fisheye:
+        pixels = project_fisheye_points(points, k, dist_coeffs)
+        expected = undistort_fisheye_points(pixels, k, dist_coeffs)
+    else:
+        pixels = project_points(points, k, dist_coeffs)
+        expected = undistort_points(pixels, k, dist_coeffs)
+    return {
+        "model": model,
+        "direction": "inverse-normalized",
+        "opencv_version": cv2.__version__,
+        "camera_matrix": k.tolist(),
+        "dist_coeffs": dist_coeffs,
+        "pixels": pixels,
+        "expected_normalized": expected,
+        "tolerance": NORMALIZED_TOLERANCE,
+    }
+
+
+def write_undistort_fixtures() -> None:
+    out = FIXTURES_DIR / "undistort"
+    _write_fixture(out / "pinhole" / "basic.json", _undistort_fixture("pinhole", ZERO_DIST_5))
+    _write_fixture(
+        out / "brown-conrady" / "basic.json",
+        _undistort_fixture("brown-conrady", BROWN_CONRADY_BASIC),
+    )
+    _write_fixture(
+        out / "brown-conrady" / "radial-only.json",
+        _undistort_fixture("brown-conrady", [-0.15, 0.03, 0.0, 0.0, 0.002]),
+    )
+    _write_fixture(
+        out / "rational" / "basic.json",
+        _undistort_fixture(
+            "rational",
+            [-0.2, 0.05, 0.001, -0.001, 0.001, 0.01, -0.003, 0.001],
+        ),
+    )
+    _write_fixture(
+        out / "fisheye" / "basic.json",
+        _undistort_fixture("fisheye", [-0.08, 0.01, -0.002, 0.0005], use_fisheye=True),
+    )
+    _write_fixture(
+        out / "fisheye" / "mild.json",
+        _undistort_fixture("fisheye", [-0.03, 0.001, 0.0, 0.0], use_fisheye=True),
+    )
+
+
 def main() -> int:
     write_pinhole_fixtures()
     write_brown_conrady_fixtures()
     write_rational_fixtures()
     write_fisheye_fixtures()
+    write_undistort_fixtures()
     return 0
 
 
