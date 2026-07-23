@@ -33,7 +33,7 @@ Last updated: 2026-07-22
 | **5 — OpenCV fisheye** | [plans/phase-5-fisheye.md](./plans/phase-5-fisheye.md) | ✅ Done |
 | **6 — Viz (minimal)** | [plans/phase-6-viz.md](./plans/phase-6-viz.md) | ✅ Done |
 | **7 — Inverse distortion & pixel-to-ray** | [plans/phase-7-inverse-and-rays.md](./plans/phase-7-inverse-and-rays.md) | ✅ Done |
-| **8 — Three.js camera / shaders** | *(to be added)* | ⬜ Not started |
+| **8 — Three.js camera / shaders** | [plans/phase-8-threejs-camera.md](./plans/phase-8-threejs-camera.md) | 📝 Placeholder (not approved) |
 
 ### Phase 7 sub-steps
 

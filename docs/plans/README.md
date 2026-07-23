@@ -18,8 +18,8 @@ Implementation plans for each project phase. **`docs/progress.md`** tracks curre
 | 4 — Rational polynomial | [phase-4-rational.md](./phase-4-rational.md) | [rational.md](../models/rational.md) | ✅ Done |
 | 5 — OpenCV fisheye | [phase-5-fisheye.md](./phase-5-fisheye.md) | [fisheye.md](../models/fisheye.md) | ✅ Done |
 | 6 — Viz (minimal) | [phase-6-viz.md](./phase-6-viz.md) | — | ✅ Done |
-| 7 — Inverse distortion & pixel-to-ray | [phase-7-inverse-and-rays.md](./phase-7-inverse-and-rays.md) | *(extend model docs)* | 📋 Planned |
-| 8 — Three.js camera / shaders | *(to be added)* | — | ⬜ Not started |
+| 7 — Inverse distortion & pixel-to-ray | [phase-7-inverse-and-rays.md](./phase-7-inverse-and-rays.md) | *(extend model docs)* | ✅ Done |
+| 8 — Three.js camera / shaders | [phase-8-threejs-camera.md](./phase-8-threejs-camera.md) | — | 📝 Placeholder (not approved) |
 
 ### Phase 7 sub-steps
 
