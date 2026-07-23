@@ -1,6 +1,6 @@
 # Sensor Rendering Architecture
 
-Status: **design reference** (Phase 8 ✅ implemented)
+Status: **implemented** (Phase 8 ✅). Architecture reference for `SensorRenderer` / `DistortionRenderPlugin`.
 
 Related: [coordinate-conventions.md](./coordinate-conventions.md), [plans/phase-8-threejs-camera.md](./plans/phase-8-threejs-camera.md)
 
@@ -82,7 +82,7 @@ World vertex (Three.js scene graph)
 - **Pinhole:** `DistortionRenderPlugin` inactive; `SensorCamera.projectionMatrix` only.
 - **Distorted models:** plugin active; minimal **vertex** insertions only (no custom fragment pipeline).
 
-Math authority remains in `@three-camera-lab/core`. GLSL chunks in `viz` are documented mirrors of `distortion/*.ts`.
+Math authority remains in `@three-camera-intrinsics-and-distortion-lab/core`. GLSL chunks in `viz` are documented mirrors of `distortion/*.ts`.
 
 ---
 
@@ -155,7 +155,7 @@ The user-facing API (`SensorRenderer.create({ model, … })` or custom `SensorCa
 | **7** | Inverse path + rays in `core` — picking, validation, future tools |
 | **8** | GPU sensor rendering via `SensorCamera` + `DistortionRenderPlugin` |
 
-Phase 6 left panel remains a correctness reference during Phase 8 manual QA. Phase 7 `pixelToCameraRay*` supports picking under a sensor camera.
+Phase 6 left panel remains a visual reference. Phase 7 `pixelToCameraRay*` supports picking under a sensor camera. Viz unit tests cover plugin patch/unpatch lifecycle (see `packages/viz/test/DistortionRenderPlugin.test.ts`).
 
 ---
 

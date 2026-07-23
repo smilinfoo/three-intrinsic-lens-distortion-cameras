@@ -13,7 +13,7 @@ import {
   type RationalCoeffs,
   type Vec2,
   type Vec3,
-} from '@three-camera-lab/core';
+} from '@three-camera-intrinsics-and-distortion-lab/core';
 
 export type ModelId = 'pinhole' | 'brown-conrady' | 'rational' | 'fisheye';
 

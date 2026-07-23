@@ -3,7 +3,7 @@ import type {
   CameraMatrix,
   FisheyeCoeffs,
   RationalCoeffs,
-} from '@three-camera-lab/core';
+} from '@three-camera-intrinsics-and-distortion-lab/core';
 import * as THREE from 'three';
 import type { ModelId } from '../demo/modelPresets';
 import {

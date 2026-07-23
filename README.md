@@ -1,142 +1,142 @@
-# Three Camera Lab
+# Three-Camera Intrinsics and Distortion Lab
 
-Educational laboratory for implementing OpenCV-compatible camera models in JavaScript, with Python/OpenCV as the numerical reference.
+> **Status:** Public research lab — **not on npm**, **not for production use** yet.
+> **Planned:** publish `@three-camera-intrinsics-and-distortion-lab/core` with built artifacts and semver.
+> Need it sooner or have a specific use case? [Open an issue](https://github.com/smilinfoo/three-camera-intrinsics-and-distortion-lab/issues/new/choose) or contact [@smilinfoo](https://github.com/smilinfoo).
 
-**Session progress:** [docs/progress.md](./docs/progress.md) · **Phase plans:** [docs/plans/](./docs/plans/) · **Model docs:** [docs/models/](./docs/models/)
+OpenCV-compatible camera projection, undistortion, and pixel→ray math in TypeScript — verified against OpenCV golden fixtures, with a reference Three.js sensor-rendering demo.
 
-## Project layout
+**Docs:** [progress](./docs/progress.md) · [changelog](./CHANGELOG.md) · [contributing](./CONTRIBUTING.md) · [coordinate conventions](./docs/coordinate-conventions.md) · [sensor rendering](./docs/sensor-rendering.md) · [model reference](./docs/models/)
 
-```
-three-camera-lab/
-├── docs/
-│   ├── progress.md              # Current phase + next step
-│   ├── coordinate-conventions.md
-│   ├── sensor-rendering.md      # SensorCamera + DistortionRenderPlugin (Phase 8)
-│   ├── plans/                   # Per-phase implementation plans
-│   └── models/                  # Per-model equations + API
-├── packages/
-│   ├── core/                    # Pure JS camera math (no Three.js)
-│   └── viz/                     # Three.js visualization
-├── reference/                   # Python/OpenCV + fixtures
-└── scripts/
-```
+## What this is
 
-## Prerequisites
+**Three-Camera Intrinsics and Distortion Lab** is an educational monorepo focused on **camera intrinsics and lens distortion** (not general multi-camera rigs, SLAM, or full calibration workflows). Python/OpenCV generates golden test vectors; TypeScript implements the same math and (optionally) renders it in Three.js.
 
-- Node.js 20+
-- Python 3.10+ on your `PATH` (from any source: system, Homebrew, pyenv, conda, etc.)
+| Package | Role today | For library users |
+|---------|------------|-------------------|
+| **`@three-camera-intrinsics-and-distortion-lab/core`** | Portable camera math (no Three.js) | **Primary reusable API** — forward projection, inverse undistortion, pixel→ray |
+| **`@three-camera-intrinsics-and-distortion-lab/viz`** | Reference demo + sensor rendering (`SensorRenderer`) | Illustrates Three.js integration; source import from the monorepo for now |
+| **`reference/`** | Python/OpenCV fixture generator + verification | Optional — not required to use `core` in your own project |
 
-All Python work runs in a project-local virtual environment at `.venv/`. Setup uses the standard library `venv` module, so no conda or global `pip` configuration is required.
+### Lab today, library soon
 
-## Setup
+The repo is set up as a **clone-and-explore lab** (see [status](#three-camera-intrinsics-and-distortion-lab) above): packages are `"private": true`, exports point at TypeScript sources, and the viz app is the main way to see sensor rendering in action.
+
+Until npm publish, clone the repo and import from source — do not expect semver stability or published tarballs. The viz layer may follow **`core`** on npm once the sensor API settles. Treat **`core` as the contract** and viz as a worked example.
+
+API is **0.x** — correct and tested, but still evolving before a 1.0 library release.
+
+## Quick start
 
 ```bash
-# Install JS dependencies and create/populate .venv
-npm run setup
+npm run setup    # JS deps + Python .venv (for fixtures / verify only)
+npm test         # 112 tests (87 core + 25 viz)
+npm run dev      # split demo: 2D projection canvas + Three.js sensor view
 ```
 
-Or step by step:
+Python is only needed for regenerating fixtures or running `npm run verify:opencv`. Core tests run with Node alone.
 
-```bash
-npm install
-npm run setup:python
+## Scope & limitations
+
+- **Models:** OpenCV pinhole, Brown-Conrady, rational polynomial, OpenCV fisheye
+- **Correctness gate:** golden tests in `core` (not the viz demo)
+- **Sensor rendering:** built-in Three.js materials only — custom `ShaderMaterial` / `RawShaderMaterial` are not patched ([details](./docs/sensor-rendering.md))
+- **Coordinates:** OpenCV vs Three.js frame conversion is documented and applied in viz — read [coordinate-conventions.md](./docs/coordinate-conventions.md) before integrating
+- **Extrinsics:** OpenCV `rvec` / `tvec` → Three.js camera pose is **not implemented**; demo geometry is authored in the OpenCV camera frame with identity extrinsics
+
+## Usage (from source)
+
+### Core — projection
+
+```typescript
+import {
+  cameraMatrixFromArray,
+  brownConradyFromArray,
+  projectBrownConrady,
+} from '@three-camera-intrinsics-and-distortion-lab/core';
+
+const K = cameraMatrixFromArray([[800, 0, 320], [0, 800, 240], [0, 0, 1]]);
+const coeffs = brownConradyFromArray([-0.2, 0.05, 0.001, -0.001, 0.001]);
+const pixel = projectBrownConrady([0.1, 0, 1], K, coeffs);
 ```
 
-To use a specific interpreter when creating `.venv`:
+### Viz — sensor rendering
 
-```bash
-PYTHON=/path/to/python3.12 npm run setup:python
+Canonical usage lives in the module docstring of [`SensorRenderer`](./packages/viz/src/sensor/SensorRenderer.ts) (do not duplicate elsewhere):
+
+```typescript
+import { SensorRenderer } from './sensor/SensorRenderer';
+
+const sensor = SensorRenderer.create({ model: 'brown-conrady' });
+scene.add(mesh, lineSegments, points, instancedMesh);
+sensor.render(renderer, scene);
+sensor.setModel('fisheye', scene);
 ```
+
+## Demo (`npm run dev`)
+
+- **Left:** 2D grid in OpenCV pixel space — baseline (gray) vs distorted (cyan) overlay
+- **Right:** Three.js sensor view — same grid rendered through `SensorCamera` + `DistortionRenderPlugin`
+- **Model switcher:** pinhole, Brown-Conrady, rational, fisheye
+
+Viz is for visual sanity; trust `core` golden tests for numerical correctness.
 
 ## Commands
 
 | Command | Description |
-|---|---|
-| `npm run setup` | Install JS deps + create `.venv` and install Python reference package |
+|---------|-------------|
+| `npm run setup` | Install JS deps + create `.venv` with Python reference package |
 | `npm run setup:python` | Create/update `.venv` only |
+| `npm test` | Vitest — 112 tests (87 `core`, 25 `viz`) |
+| `npm run build` | Production build of the viz app |
+| `npm run dev` | Vite dev server (split demo) |
 | `npm run generate:fixtures` | Regenerate OpenCV golden JSON fixtures |
-| `npm test` | Run Vitest (90 tests: 87 in `core`, 3 in `viz`) |
-| `npm run dev` | Start the Vite dev server (Three.js scene) |
-| `npm run verify:opencv` | Run OpenCV verification inside `.venv` |
+| `npm run verify:opencv` | OpenCV smoke test inside `.venv` |
 
-## Packages
+CI (GitHub Actions): `npm test`, `npm run build`, and `npm run verify:opencv` on every push/PR.
 
-### `@three-camera-lab/core`
+## Project layout
 
-Pure camera mathematics. No Three.js dependency. Implements pinhole, Brown-Conrady, rational polynomial, and OpenCV fisheye forward projection with golden tests against OpenCV fixtures.
+```
+three-camera-intrinsics-and-distortion-lab/
+├── docs/                 # Conventions, architecture, phase plans, model equations
+├── packages/
+│   ├── core/             # @three-camera-intrinsics-and-distortion-lab/core — camera math (library target)
+│   └── viz/              # Demo app + SensorRenderer (reference integration)
+├── reference/            # Python/OpenCV fixtures + generator
+├── scripts/
+└── .github/workflows/    # CI
+```
 
-### `@three-camera-lab/viz`
+## Prerequisites
 
-Three.js visualization layer. Depends on `core` for projection math. **`npm run dev`** opens a split demo: 2D projection grid (model switcher, OpenCV pixel space) + Three.js scene.
+- **Node.js 20+** — required
+- **Python 3.10+** — optional (fixtures, OpenCV verification)
 
-Phase 8 adds **sensor-accurate rendering** via [`SensorRenderer`](./packages/viz/src/sensor/SensorRenderer.ts) (usage docstring is the single canonical example). **`npm run dev`** — 2D reference canvas + Three.js sensor view.
+```bash
+PYTHON=/path/to/python3.12 npm run setup:python   # pin interpreter if needed
+```
 
-### Viz demo (Phase 6)
+## Dependencies
 
-- **Left panel:** grid projected with `core` functions — gray baseline + cyan distorted overlay
-- **Model switcher:** pinhole, Brown-Conrady, rational, fisheye
-- **Fisheye baseline:** equidistant (k = 0), not pinhole
-- Visual sanity check only; golden tests in `core` are the correctness gate
+| Package | Version | Notes |
+|---------|---------|--------|
+| **three** | `0.178.0` (pinned) | Sensor rendering uses WebGL 2 / GLSL 3.0 and `Material.onBeforeCompile`. Test before upgrading — shader chunk names and compile lifecycle change across Three.js releases. |
+| **vite** | `^7.0.5` | Viz dev/build only |
+| **vitest** | `^3.2.4` | Tests |
+| **opencv-python** | `>=4.9` | Fixture generator only (Python `.venv`) |
 
-### `reference/`
+Run `npm audit` periodically; CI does not fail on audit today — check locally before releases.
 
-Python/OpenCV ground truth. Generates golden test vectors and provides verification tooling.
-
-## Development order
-
-| Step | Status | Deliverable |
-|------|--------|-------------|
-| 1. Coordinate conventions | ✅ Done | [docs/coordinate-conventions.md](./docs/coordinate-conventions.md) |
-| 2. Pinhole + golden tests | ✅ Done | `projection/pinhole.ts`, `reference/fixtures/pinhole/` |
-| 3. Brown-Conrady distortion | ✅ Done | [models/brown-conrady.md](./docs/models/brown-conrady.md) |
-| 4. Rational polynomial | ✅ Done | [models/rational.md](./docs/models/rational.md) |
-| 5. OpenCV fisheye | ✅ Done | [models/fisheye.md](./docs/models/fisheye.md) |
-| 6. Viz per model | ✅ Done | `npm run dev` — projection grid demo |
-| 7. Inverse distortion & pixel-to-ray | ✅ Done | [plans/phase-7-inverse-and-rays.md](./docs/plans/phase-7-inverse-and-rays.md) |
-| 8. Sensor cameras & render plugin | ✅ Done | [plans/phase-8-threejs-camera.md](./docs/plans/phase-8-threejs-camera.md), [sensor-rendering.md](./docs/sensor-rendering.md) |
-
-Detailed phase checklist: [docs/progress.md](./docs/progress.md) · Plans: [docs/plans/](./docs/plans/)
+**Local-only paths (gitignored):** `dist/`, `.venv/`, `.env` — never commit build output, virtualenvs, or secrets.
 
 ## Testing strategy
 
-Three layers, all model-scoped:
+1. **Unit tests** — hand-crafted edge cases per model (symmetry, zero distortion, behind-camera policy)
+2. **Golden tests** — Python-generated fixtures under `reference/fixtures/`; primary correctness gate
+3. **Viz tests** — plugin lifecycle, projection matrix parity, pixel→ray frame conversion (not GPU goldens)
 
-### 1. Unit tests (JavaScript, hand-crafted)
-
-- Origin, points on optical axis, points at normalized plane edge
-- Zero distortion → pinhole identity
-- Symmetry cases where the model is symmetric
-- Known degeneracies (e.g. `Z ≤ 0` behind camera — see convention doc)
-
-### 2. Golden tests (Python-generated fixtures)
-
-Primary correctness gate. Each model has its own fixture subdirectory under `reference/fixtures/` and golden test file.
-
-Shared fixture fields: `model`, `opencv_version`, `camera_matrix`, `dist_coeffs`, `points_3d`, `expected_pixels`, `tolerance`.
-
-Pinhole example (`dist_coeffs` length 5; rational uses 8; fisheye will use 4):
-
-```json
-{
-  "model": "pinhole",
-  "opencv_version": "5.0.0",
-  "camera_matrix": [[fx, 0, cx], [0, fy, cy], [0, 0, 1]],
-  "dist_coeffs": [0, 0, 0, 0, 0],
-  "points_3d": [[x, y, z], ...],
-  "expected_pixels": [[u, v], ...],
-  "tolerance": { "abs": 1e-4, "rel": 1e-6 }
-}
-```
-
-### 3. Cross-check scripts (optional, later)
-
-- Random parameter sampling in Python → batch compare in JS
-- Report max/mean error per model
-- Useful for regression when refactoring
-
-**What not to test in viz:** numerical correctness. Viz is for intuition; `core` golden tests are the gate.
-
-**CI suggestion (later):** generate fixtures (cached) → vitest golden → typecheck. Python runs only when fixture generator or OpenCV pin changes.
+See [docs/progress.md](./docs/progress.md) for the full phase checklist (Phases 0–8 complete).
 
 ## Convention documentation
 
@@ -144,14 +144,11 @@ Authoritative reference: [docs/coordinate-conventions.md](./docs/coordinate-conv
 
 | Topic | Status |
 |-------|--------|
-| OpenCV vs Three.js camera frames (diagram + transform matrix) | ✅ Documented |
-| When distortion is applied (normalized plane, before `K`) | ✅ Documented |
-| Pinhole projection pipeline + fixture assumptions | ✅ Documented |
-| Pixel center / sub-pixel output from `cv2.projectPoints` | ✅ Verified and documented |
-| Behind-camera points (`Z ≤ 0`) | ✅ Policy set (exclude from fixtures) |
-| Golden-test floating-point tolerance | ✅ `1e-4` px absolute |
-| Distortion coefficient layouts | ✅ All forward models in [docs/models/](./docs/models/) |
-| Fisheye vs pinhole code paths | ✅ Separate module and API (`cv2.fisheye.projectPoints`) |
+| OpenCV vs Three.js camera frames | ✅ |
+| Distortion on normalized plane, before `K` | ✅ |
+| Behind-camera points (`Z ≤ 0`) | ✅ Excluded from fixtures |
+| Golden-test tolerance | ✅ `1e-4` px absolute |
+| Per-model coefficient layouts | ✅ [docs/models/](./docs/models/) |
 
 ## License
 

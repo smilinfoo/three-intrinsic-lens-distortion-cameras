@@ -1,9 +1,9 @@
 /**
  * Pure camera math package.
- * No Three.js dependencies — implementations will be added incrementally.
+ * No Three.js dependencies.
  */
 
-export const PACKAGE_NAME = '@three-camera-lab/core';
+export const PACKAGE_NAME = '@three-camera-intrinsics-and-distortion-lab/core';
 
 export * from './types';
 export * from './coords/opencv';

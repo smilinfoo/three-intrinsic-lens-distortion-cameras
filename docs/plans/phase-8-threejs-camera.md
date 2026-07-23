@@ -1,4 +1,4 @@
-# Phase 8 Plan — Sensor Cameras & Distortion Render Plugin (Placeholder)
+# Phase 8 Plan — Sensor Cameras & Distortion Render Plugin
 
 Status: **✅ complete**
 
@@ -14,8 +14,8 @@ Enable **sensor-accurate 3D rendering** in Three.js: project points, lines, mesh
 
 Wire the **right-hand Three.js panel** (`npm run dev`) to use this path while the **left-hand 2D canvas** (Phase 6) remains a reference overlay.
 
-| Today | Phase 8 |
-|-------|---------|
+| Before | Implemented |
+|--------|-------------|
 | Left: `core.project*` on 2D canvas | Unchanged (reference) |
 | Right: stock `PerspectiveCamera` + cube | `SensorCamera` + `DistortionRenderPlugin` |
 | User must understand demo internals | User supplies model + `K` + params only |
@@ -38,7 +38,7 @@ See [sensor-rendering.md](../sensor-rendering.md) for full architectural rationa
 
 5. **Plugin for the non-linear part** — Forward distortion runs in a **vertex-shader insertion** applied by `DistortionRenderPlugin`. Not a standalone fragment-shader render pipeline; stock fragment shaders unchanged.
 
-6. **Core is ground truth** — Numerical definitions in `@three-camera-lab/core`. GLSL chunks in `viz` are documented mirrors of `distortion/*.ts`.
+6. **Core is ground truth** — Numerical definitions in `@three-camera-intrinsics-and-distortion-lab/core`. GLSL chunks in `viz` are documented mirrors of `distortion/*.ts`.
 
 7. **Frame boundary explicit** — OpenCV ↔ Three.js via `coords/three.ts` only inside camera/plugin code, not in user scene code.
 
@@ -152,7 +152,7 @@ See [sensor-rendering.md](../sensor-rendering.md) for rationale. Summary:
 | Item | Detail |
 |------|--------|
 | **`DistortionRenderPlugin`** | Global render hook: registers `onBeforeCompile` (or equivalent) for built-in materials; reads uniforms from active `SensorCamera`; applies VS insertion from GLSL chunks |
-| **`attachDistortionPlugin(renderer, camera)`** | Lifecycle: attach on camera change, detach for pinhole, handle material compile order |
+| **`attachDistortionPlugin(plugin, camera)`** | Always attach camera; plugin patches or unpatches materials per `usesDistortion()` |
 | **GLSL chunks** | `brown-conrady.glsl.ts`, `rational.glsl.ts` — mirrors of `core/distortion/*` |
 | **`OpenCvBrownConradyCamera` / `OpenCvRationalCamera`** | Extend base; expose coeffs + model id; **do not** embed patching logic — delegate to plugin |
 | **Acceptance** | Add mesh + lines + points + `InstancedMesh` to scene with stock materials; switch to Brown-Conrady; **no material/geometry edits**; overlay aligns with left 2D canvas |
@@ -161,9 +161,9 @@ See [sensor-rendering.md](../sensor-rendering.md) for rationale. Summary:
 
 **8B definition of done (plugin):**
 
-- [ ] Plugin is a separate module under `viz/src/render/`
-- [ ] Camera classes only supply config + uniforms; plugin owns all material patching
-- [ ] At least one mesh, one line, one points cloud, one `InstancedMesh` render correctly under distortion without user-side material changes
+- [x] Plugin is a separate module under `viz/src/render/`
+- [x] Camera classes only supply config + uniforms; plugin owns all material patching
+- [x] At least one mesh, one line, one points cloud, one `InstancedMesh` render correctly under distortion without user-side material changes
 
 ### 8C — Fisheye via plugin
 
@@ -216,11 +216,11 @@ interface SensorPreset {
 
 | Layer | Approach |
 |-------|----------|
-| `core` | 87 tests unchanged |
-| `buildSensorProjectionMatrix` | Viz unit tests |
-| `DistortionRenderPlugin` | Manual QA: mesh + line + points + instanced without material edits |
-| GLSL vs CPU | Spot-check sample vertices |
-| Full render | No automated pixel golden tests in viz |
+| `core` | 87 golden + unit tests |
+| `viz` | 25 unit tests (`buildSensorProjectionMatrix`, `DistortionRenderPlugin`, `SensorCamera`, `pixelToRay`) |
+| `DistortionRenderPlugin` | Automated patch/unpatch + GLSL scope tests; manual QA via `npm run dev` |
+| GLSL vs CPU | Spot-check sample vertices (future: Playwright pixel parity) |
+| Full GPU render | No automated pixel golden tests in viz yet |
 
 ---
 
@@ -248,7 +248,7 @@ interface SensorPreset {
 - [x] Near/far default `0.1` / `2000`
 - [x] All four OpenCV models wired via model switcher
 - [x] `pixelToThreeRayFromCamera` helper
-- [x] `npm test` green (87 core + 3 viz)
+- [x] `npm test` green (87 core + 25 viz)
 - [ ] Optional sensor image backdrop (deferred)
 
 ---
@@ -259,7 +259,7 @@ interface SensorPreset {
 |------|------------|
 | Plugin misses some built-in materials | Central registry; test matrix per material type |
 | GLSL drifts from core | Named mirror files; CPU spot-checks |
-| Material compile order / hot reload | Document attach lifecycle; recompile on camera change |
+| Material compile order / hot reload | Patch/unpatch on model switch; `needsUpdate` + `customProgramCacheKey`; see `DistortionRenderPlugin.test.ts` |
 | Custom user shaders unsupported | Document exclusions in sensor-rendering.md |
 | `onBeforeCompile` API changes | Pin Three.js version; single plugin module |
 

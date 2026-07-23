@@ -11,7 +11,7 @@ if (!app) {
 app.innerHTML = `
   <div class="layout">
     <header class="toolbar">
-      <h1>Three Camera Lab</h1>
+      <h1>Three-Camera Intrinsics and Distortion Lab</h1>
       <label class="model-picker">
         Model
         <select id="model-select"></select>

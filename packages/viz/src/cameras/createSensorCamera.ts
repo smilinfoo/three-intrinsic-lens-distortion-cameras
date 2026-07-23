@@ -2,7 +2,7 @@ import {
   brownConradyFromArray,
   fisheyeFromArray,
   rationalFromArray,
-} from '@three-camera-lab/core';
+} from '@three-camera-intrinsics-and-distortion-lab/core';
 import {
   getModelPreset,
   IMAGE_HEIGHT,

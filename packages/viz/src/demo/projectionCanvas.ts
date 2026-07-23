@@ -1,4 +1,4 @@
-import type { Vec2 } from '@three-camera-lab/core';
+import type { Vec2 } from '@three-camera-intrinsics-and-distortion-lab/core';
 import type { ProjectFn } from './modelPresets';
 import type { Segment } from './gridPoints';
 

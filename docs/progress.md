@@ -2,11 +2,14 @@
 
 Last updated: 2026-07-23
 
+Public-facing overview: [README](../README.md) · CI: [.github/workflows/ci.yml](../.github/workflows/ci.yml)
+
 ## Documentation map
 
 | Doc | Purpose |
 |-----|---------|
 | [docs/progress.md](./progress.md) | **Start here** — current phase, next step, prompts |
+| [CONTRIBUTING.md](../CONTRIBUTING.md) | Setup, package boundaries, PR checklist |
 | [docs/plans/](./plans/) | Per-phase implementation plans |
 | [docs/models/](./models/) | Per-model equations and API reference |
 | [docs/coordinate-conventions.md](./coordinate-conventions.md) | Coordinate frames, pipelines, policies |
@@ -40,7 +43,7 @@ All planned phases (0–8) implemented.
 
 ## Implemented
 
-### Core (`@three-camera-lab/core`)
+### Core (`@three-camera-intrinsics-and-distortion-lab/core`)
 
 | Model | Forward | Inverse | Rays |
 |-------|---------|---------|------|
@@ -49,9 +52,9 @@ All planned phases (0–8) implemented.
 | Rational | `distortion/rational.ts` | `undistortion/rational.ts` | `pixelToCameraRayRational` |
 | Fisheye | `distortion/fisheye.ts` | `undistortion/fisheye.ts` | `pixelToCameraRayFisheye` |
 
-**87 tests** in `core`.
+**87 tests** in `core`. **25 tests** in `viz`. **112 total** (`npm test`).
 
-### Viz (`@three-camera-lab/viz`)
+### Viz (`@three-camera-intrinsics-and-distortion-lab/viz`)
 
 | Component | Path |
 |-----------|------|
@@ -63,7 +66,7 @@ All planned phases (0–8) implemented.
 | GLSL distortion mirrors | `shaders/chunks/distortion.glsl.ts` |
 | `pixelToThreeRayFromCamera()` | `cameras/pixelToRay.ts` |
 
-**24 tests** in `viz`. **`npm run dev`** — split demo: 2D reference canvas + Three.js sensor view (grid lines, points, instanced markers).
+Viz tests cover projection matrix parity, `DistortionRenderPlugin` patch/unpatch lifecycle, `usesDistortion()`, and pixel→ray frame conversion. **`npm run dev`** — split demo: 2D reference canvas + Three.js sensor view (grid lines, points, instanced markers).
 
 ---
 
@@ -72,6 +75,14 @@ All planned phases (0–8) implemented.
 ```bash
 npm run setup && npm test && npm run dev
 ```
+
+GitHub Actions runs `npm test`, `npm run build`, and `npm run verify:opencv` on push/PR.
+
+---
+
+## Publishing
+
+Repo is public as a **lab** today; **`@three-camera-intrinsics-and-distortion-lab/core` npm library** is planned soon. See [README](../README.md#lab-today-library-soon) and [CHANGELOG](../CHANGELOG.md).
 
 ---
 

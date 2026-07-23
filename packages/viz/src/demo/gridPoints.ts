@@ -1,4 +1,4 @@
-import { vec3, type Vec3 } from '@three-camera-lab/core';
+import { vec3, type Vec3 } from '@three-camera-intrinsics-and-distortion-lab/core';
 
 export type Segment = readonly [Vec3, Vec3];
 

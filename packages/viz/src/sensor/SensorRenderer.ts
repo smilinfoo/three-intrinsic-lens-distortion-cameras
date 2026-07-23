@@ -47,7 +47,7 @@
  * Use {@link SensorCamera} directly, then wrap with `new SensorRenderer(camera)`:
  *
  * ```typescript
- * import { brownConradyFromArray, cameraMatrixFromArray } from '@three-camera-lab/core';
+ * import { brownConradyFromArray, cameraMatrixFromArray } from '@three-camera-intrinsics-and-distortion-lab/core';
  * import { SensorCamera } from './cameras/SensorCamera';
  *
  * const camera = new SensorCamera({

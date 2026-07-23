@@ -1,0 +1,57 @@
+name: Feature request
+description: Propose new behavior, models, or API improvements
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Propose a change that fits the repo scope ([README scope & limitations](https://github.com/smilinfoo/three-camera-intrinsics-and-distortion-lab#scope--limitations)).
+        Large or out-of-scope ideas are welcome — they help prioritize the roadmap.
+
+  - type: checkboxes
+    id: npm-ack
+    attributes:
+      label: Acknowledgment
+      description: Required before submitting.
+      options:
+        - label: I understand this project is not published to npm yet and is not supported for production use.
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What problem does this solve? Who benefits?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: API sketch, behavior, or reference (OpenCV docs, papers, other libs).
+    validations:
+      required: true
+
+  - type: dropdown
+    id: package
+    attributes:
+      label: Primary package
+      options:
+        - core
+        - viz
+        - reference / fixtures
+        - docs / tooling
+        - undecided
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check (optional)
+      options:
+        - label: I read CONTRIBUTING.md — this is not listed as explicitly out of scope.
+        - label: I am willing to help implement or test this in a PR.

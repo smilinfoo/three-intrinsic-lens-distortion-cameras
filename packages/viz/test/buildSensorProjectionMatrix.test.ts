@@ -4,7 +4,7 @@ import {
   cameraMatrixFromArray,
   projectPinhole,
   vec3,
-} from '@three-camera-lab/core';
+} from '@three-camera-intrinsics-and-distortion-lab/core';
 import { SensorCamera } from '../src/cameras/SensorCamera';
 import { buildSensorProjectionMatrix } from '../src/cameras/buildSensorProjectionMatrix';
 

@@ -1,4 +1,4 @@
-import type { CameraMatrix } from '@three-camera-lab/core';
+import type { CameraMatrix } from '@three-camera-intrinsics-and-distortion-lab/core';
 import * as THREE from 'three';
 
 /** Default clip planes — match native THREE.PerspectiveCamera. */

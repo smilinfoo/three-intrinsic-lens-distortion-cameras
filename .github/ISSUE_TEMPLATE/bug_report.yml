@@ -1,0 +1,71 @@
+name: Bug report
+description: Something is broken or incorrect (math, tests, demo, docs)
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report incorrect projection/undistortion, test failures, demo rendering issues, or doc errors.
+        For math bugs, include expected vs actual values when possible.
+
+  - type: checkboxes
+    id: npm-ack
+    attributes:
+      label: Acknowledgment
+      description: Required before submitting.
+      options:
+        - label: I understand this project is not published to npm yet and is not supported for production use.
+          required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - core (camera math)
+        - viz (Three.js demo / SensorRenderer)
+        - reference (Python fixtures / OpenCV)
+        - docs / CI
+        - other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: model
+    attributes:
+      label: Distortion model (if applicable)
+      options:
+        - pinhole
+        - brown-conrady
+        - rational
+        - fisheye
+        - n/a
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Steps to reproduce and what you observed.
+      placeholder: "1. npm run dev\n2. Switch to fisheye\n3. Grid disappears on pinhole restore..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Node version, browser (for viz), commit or branch if not on main.
+      placeholder: "macOS 15, Node 20.18, Chrome 138, main @ abc1234"
+    validations:
+      required: false

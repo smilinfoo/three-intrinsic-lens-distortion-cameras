@@ -1,7 +1,7 @@
 [project]
 name = "camera-lab-ref"
 version = "0.1.0"
-description = "OpenCV reference implementation for three-camera-lab"
+description = "OpenCV reference implementation for Three-Camera Intrinsics and Distortion Lab"
 license = "MIT"
 requires-python = ">=3.10"
 dependencies = [

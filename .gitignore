@@ -2,6 +2,11 @@ node_modules/
 dist/
 *.local
 
+# Secrets / local env (never commit)
+.env
+.env.*
+!.env.example
+
 # Python
 __pycache__/
 *.py[cod]

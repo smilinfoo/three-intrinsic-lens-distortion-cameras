@@ -3,7 +3,7 @@ import {
   cameraMatrixFromArray,
   fisheyeFromArray,
   rationalFromArray,
-} from '@three-camera-lab/core';
+} from '@three-camera-intrinsics-and-distortion-lab/core';
 import { describe, expect, it } from 'vitest';
 import { SensorCamera } from '../src/cameras/SensorCamera';
 

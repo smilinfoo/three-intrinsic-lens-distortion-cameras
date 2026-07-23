@@ -1,0 +1,43 @@
+name: Question
+description: Usage help, integration guidance, or clarification (not a bug)
+title: "[Question]: "
+labels:
+  - question
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ask about coordinate conventions, importing from source, sensor rendering, or the roadmap to npm.
+        Search [closed issues](https://github.com/smilinfoo/three-camera-intrinsics-and-distortion-lab/issues?q=is%3Aissue+is%3Aclosed) first if you can.
+
+  - type: checkboxes
+    id: npm-ack
+    attributes:
+      label: Acknowledgment
+      description: Required before submitting.
+      options:
+        - label: I understand this project is not published to npm yet and is not supported for production use.
+          required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      placeholder: "How should I apply OpenCV K when authoring geometry in Three.js?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What you are building, which package (`core` vs `viz`), and what you have tried.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: urgency
+    attributes:
+      label: Timeline (optional)
+      options:
+        - label: I need npm or production support sooner than the public roadmap — please discuss timeline.

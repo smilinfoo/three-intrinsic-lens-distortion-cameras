@@ -1,5 +1,5 @@
 {
-  "name": "@three-camera-lab/viz",
+  "name": "@three-camera-intrinsics-and-distortion-lab/viz",
   "version": "0.1.0",
   "license": "MIT",
   "private": true,
@@ -11,8 +11,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@three-camera-lab/core": "*",
-    "three": "^0.178.0"
+    "@three-camera-intrinsics-and-distortion-lab/core": "*",
+    "three": "0.178.0"
   },
   "devDependencies": {
     "typescript": "^5.8.3",

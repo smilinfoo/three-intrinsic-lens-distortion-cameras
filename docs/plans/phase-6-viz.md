@@ -8,12 +8,12 @@ Related: [coordinate-conventions.md](../coordinate-conventions.md) §3–4 (Open
 
 ## Goal
 
-Add **visual sanity-check demos** in `@three-camera-lab/viz` that use `core` projection functions to render distorted vs undistorted grid overlays — one demo per forward model (pinhole, Brown-Conrady, rational, fisheye).
+Add **visual sanity-check demos** in `@three-camera-intrinsics-and-distortion-lab/viz` that use `core` projection functions to render distorted vs undistorted grid overlays — one demo per forward model (pinhole, Brown-Conrady, rational, fisheye).
 
 **Purpose:** intuition and pedagogy. **Not** a correctness gate — golden tests in `core` remain authoritative.
 
 **In scope:** 2D projection overlays driven by `core`, model switcher, shared grid generator, manual visual QA notes.  
-**Out of scope:** custom `THREE.Camera` subclasses (Phase 8), GLSL distortion shaders (Phase 8), undistortion (Phase 7), automated visual regression, reimplementing math in viz.
+**Out of scope:** automated full-frame GPU golden tests (viz unit tests cover plugin lifecycle; see `packages/viz/test/`), reimplementing math in viz.
 
 ---
 
@@ -99,7 +99,7 @@ Points stay in **OpenCV camera frame** (`Z > 0`). No extrinsics.
 
 **Do not add:**
 
-- New projection math in `viz` (import from `@three-camera-lab/core` only)
+- New projection math in `viz` (import from `@three-camera-intrinsics-and-distortion-lab/core` only)
 - `coords/three.ts` usage unless later placing 3D markers (defer to Phase 8)
 - Vitest tests for pixel values in viz
 

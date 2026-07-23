@@ -10,7 +10,7 @@ import {
   type RationalCoeffs,
   type Vec2,
   type Vec3,
-} from '@three-camera-lab/core';
+} from '@three-camera-intrinsics-and-distortion-lab/core';
 import type { ModelId } from '../demo/modelPresets';
 import type { SensorCamera } from '../cameras/SensorCamera';
 

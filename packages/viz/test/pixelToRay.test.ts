@@ -14,7 +14,7 @@ import {
   rationalFromArray,
   vec3,
   type Vec3,
-} from '@three-camera-lab/core';
+} from '@three-camera-intrinsics-and-distortion-lab/core';
 import { describe, expect, it } from 'vitest';
 import { createSensorCamera } from '../src/cameras/createSensorCamera';
 import { pixelToThreeRay, pixelToThreeRayFromCamera } from '../src/cameras/pixelToRay';

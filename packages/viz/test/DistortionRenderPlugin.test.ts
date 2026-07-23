@@ -154,6 +154,20 @@ describe('DistortionRenderPlugin', () => {
     expect(material.onBeforeCompile).toBe(originalCompile);
   });
 
+  it('does not patch custom RawShaderMaterial instances', () => {
+    const plugin = new DistortionRenderPlugin();
+    const material = new THREE.RawShaderMaterial({
+      vertexShader: 'void main() { gl_Position = vec4(0.0); }',
+      fragmentShader: 'void main() { gl_FragColor = vec4(1.0); }',
+    });
+    const originalCompile = material.onBeforeCompile;
+
+    plugin.attach(createSensorCamera({ model: 'brown-conrady' }));
+    plugin.prepareScene(buildLineScene(material));
+
+    expect(material.onBeforeCompile).toBe(originalCompile);
+  });
+
   it('does not patch materials when no camera is attached', () => {
     const plugin = new DistortionRenderPlugin();
     const material = new THREE.LineBasicMaterial({ color: 0x44ccff });
