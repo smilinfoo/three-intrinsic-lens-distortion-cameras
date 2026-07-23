@@ -8,8 +8,43 @@ import {
 } from '../shaders/chunks/distortion.glsl';
 
 const PROJECT_VERTEX_TOKEN = '#include <project_vertex>';
+const COMMON_TOKEN = '#include <common>';
 
 const PATCHED_MATERIALS = new WeakSet<THREE.Material>();
+
+interface MaterialBackup {
+  onBeforeCompile?: (parameters: unknown, renderer: THREE.WebGLRenderer) => void;
+  customProgramCacheKey?: () => string;
+}
+
+const MATERIAL_BACKUPS = new WeakMap<THREE.Material, MaterialBackup>();
+
+const DISTORTION_UNIFORMS_GLSL = /* glsl */ `
+uniform float uFx;
+uniform float uFy;
+uniform float uCx;
+uniform float uCy;
+uniform float uImageWidth;
+uniform float uImageHeight;
+uniform int uDistortionModel;
+uniform float uBrownK1;
+uniform float uBrownK2;
+uniform float uBrownK3;
+uniform float uBrownP1;
+uniform float uBrownP2;
+uniform float uRatK1;
+uniform float uRatK2;
+uniform float uRatK3;
+uniform float uRatK4;
+uniform float uRatK5;
+uniform float uRatK6;
+uniform float uRatP1;
+uniform float uRatP2;
+uniform float uFishK1;
+uniform float uFishK2;
+uniform float uFishK3;
+uniform float uFishK4;
+`;
 
 function distortionModelUniform(model: SensorCamera['model']): number {
   switch (model) {
@@ -85,17 +120,33 @@ function buildUniforms(camera: SensorCamera): Record<string, THREE.IUniform> {
   return uniforms;
 }
 
+/** Inject distortion helpers at global scope — never inside main() where project_vertex lives. */
+function injectGlobalDistortionGlsl(source: string): string {
+  const helpers = [
+    DISTORTION_UNIFORMS_GLSL,
+    BROWN_CONRADY_GLSL,
+    RATIONAL_GLSL,
+    FISHEYE_GLSL,
+    OPENCV_PROJECT_GLSL,
+  ].join('\n');
+
+  if (source.includes(COMMON_TOKEN)) {
+    return source.replace(COMMON_TOKEN, `${COMMON_TOKEN}\n${helpers}`);
+  }
+
+  return `${helpers}\n${source}`;
+}
+
 function patchVertexShader(source: string): string {
   if (!source.includes(PROJECT_VERTEX_TOKEN)) {
     return source;
   }
 
-  const helpers = [BROWN_CONRADY_GLSL, RATIONAL_GLSL, FISHEYE_GLSL, OPENCV_PROJECT_GLSL].join(
-    '\n',
-  );
-
   const customProject = /* glsl */ `
 vec4 mvPosition = vec4( transformed, 1.0 );
+#ifdef USE_BATCHING
+  mvPosition = batchingMatrix * mvPosition;
+#endif
 #ifdef USE_INSTANCING
   mvPosition = instanceMatrix * mvPosition;
 #endif
@@ -103,7 +154,8 @@ mvPosition = modelViewMatrix * mvPosition;
 gl_Position = opencvProjectDistorted( mvPosition );
 `;
 
-  return source.replace(PROJECT_VERTEX_TOKEN, `${helpers}\n${customProject}`);
+  const withGlobals = injectGlobalDistortionGlsl(source);
+  return withGlobals.replace(PROJECT_VERTEX_TOKEN, customProject);
 }
 
 function isPatchableMaterial(material: THREE.Material): boolean {
@@ -122,6 +174,29 @@ function isPatchableMaterial(material: THREE.Material): boolean {
   );
 }
 
+function unpatchMaterial(material: THREE.Material): void {
+  if (!PATCHED_MATERIALS.has(material)) {
+    return;
+  }
+
+  const backup = MATERIAL_BACKUPS.get(material);
+  if (backup?.onBeforeCompile) {
+    material.onBeforeCompile = backup.onBeforeCompile;
+  } else {
+    delete material.onBeforeCompile;
+  }
+
+  if (backup?.customProgramCacheKey) {
+    material.customProgramCacheKey = backup.customProgramCacheKey;
+  } else {
+    delete material.customProgramCacheKey;
+  }
+
+  material.needsUpdate = true;
+  PATCHED_MATERIALS.delete(material);
+  MATERIAL_BACKUPS.delete(material);
+}
+
 /** Global render hook: patches built-in materials for forward sensor distortion. */
 export class DistortionRenderPlugin {
   private camera: SensorCamera | null = null;
@@ -134,12 +209,10 @@ export class DistortionRenderPlugin {
     this.camera = null;
   }
 
-  /** Patch materials in the scene graph for the active distortion camera. */
+  /** Patch or restore materials in the scene graph for the active camera. */
   prepareScene(scene: THREE.Object3D): void {
     const camera = this.camera;
-    if (!camera?.usesDistortion()) {
-      return;
-    }
+    const useDistortion = camera?.usesDistortion() ?? false;
 
     scene.traverse((object) => {
       if (
@@ -148,9 +221,28 @@ export class DistortionRenderPlugin {
         object instanceof THREE.LineSegments ||
         object instanceof THREE.Points
       ) {
-        this.ensureMaterialPatched(object.material, camera);
+        if (useDistortion && camera) {
+          this.ensureMaterialPatched(object.material, camera);
+        } else {
+          this.ensureMaterialUnpatched(object.material);
+        }
       }
     });
+  }
+
+  private ensureMaterialUnpatched(material: THREE.Material | THREE.Material[]): void {
+    if (Array.isArray(material)) {
+      for (const entry of material) {
+        this.ensureMaterialUnpatched(entry);
+      }
+      return;
+    }
+
+    if (!isPatchableMaterial(material)) {
+      return;
+    }
+
+    unpatchMaterial(material);
   }
 
   private ensureMaterialPatched(
@@ -175,6 +267,11 @@ export class DistortionRenderPlugin {
 
     const priorOnBeforeCompile = material.onBeforeCompile?.bind(material);
 
+    MATERIAL_BACKUPS.set(material, {
+      onBeforeCompile: priorOnBeforeCompile,
+      customProgramCacheKey: material.customProgramCacheKey?.bind(material),
+    });
+
     material.onBeforeCompile = (shader, renderer) => {
       priorOnBeforeCompile?.(shader, renderer);
 
@@ -188,7 +285,7 @@ export class DistortionRenderPlugin {
 
     material.customProgramCacheKey = () => {
       const active = this.camera;
-      return active ? `sensor-distortion-${active.model}` : 'sensor-distortion-off';
+      return active?.usesDistortion() ? `sensor-distortion-${active.model}` : 'sensor-distortion-off';
     };
 
     material.needsUpdate = true;
@@ -200,9 +297,5 @@ export function attachDistortionPlugin(
   plugin: DistortionRenderPlugin,
   camera: SensorCamera,
 ): void {
-  if (camera.usesDistortion()) {
-    plugin.attach(camera);
-  } else {
-    plugin.detach();
-  }
+  plugin.attach(camera);
 }

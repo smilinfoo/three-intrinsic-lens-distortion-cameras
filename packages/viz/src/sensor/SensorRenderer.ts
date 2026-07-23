@@ -39,8 +39,8 @@
  *
  * ### Pinhole (no distortion)
  *
- * `model: 'pinhole'` uses {@link SensorCamera.projectionMatrix} only; the distortion
- * plugin detaches automatically (`usesDistortion()` is false).
+ * `model: 'pinhole'` uses {@link SensorCamera.projectionMatrix} only; patched materials
+ * are restored automatically when `usesDistortion()` is false.
  *
  * ### Custom intrinsics / coefficients
  *
