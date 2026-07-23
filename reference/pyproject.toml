@@ -2,6 +2,7 @@
 name = "camera-lab-ref"
 version = "0.1.0"
 description = "OpenCV reference implementation for three-camera-lab"
+license = "MIT"
 requires-python = ">=3.10"
 dependencies = [
   "numpy>=1.26",

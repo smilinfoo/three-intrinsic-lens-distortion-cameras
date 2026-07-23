@@ -155,4 +155,4 @@ Authoritative reference: [docs/coordinate-conventions.md](./docs/coordinate-conv
 
 ## License
 
-Private — educational project.
+[MIT](./LICENSE)
