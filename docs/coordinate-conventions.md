@@ -189,10 +189,23 @@ const S = new Matrix4().makeRotationX(Math.PI);
 |-------|-------------------|-------|
 | `reference/` (Python) | OpenCV | `cv2.projectPoints`, calibration output |
 | `packages/core/` | OpenCV | All projection, distortion, golden-test comparisons |
-| `packages/viz/` | Three.js | Scene graph, `PerspectiveCamera`, shaders |
+| `packages/viz/` | Three.js | Scene graph, sensor cameras, render plugin |
 | Boundary | `coords/opencv.ts`, `coords/three.ts` | Explicit conversion helpers |
 
 **Do not** silently flip axes inside distortion or projection code. Conversions belong in `coords/`.
+
+### Viz sensor rendering (Phase 8)
+
+GPU rendering of 3D content through a calibrated sensor uses two cooperating components in `packages/viz/`:
+
+| Component | Role |
+|-----------|------|
+| **`SensorCamera`** | Custom `THREE.Camera`: intrinsics `K`, distortion params, `projectionMatrix`, uniforms |
+| **`DistortionRenderPlugin`** | Global hook patching built-in materials for forward distortion (vertex stage) |
+
+Users add standard meshes/lines/points/instanced geometry **without changing materials**. Linear intrinsics live in `projectionMatrix`; non-linear distortion requires the plugin (cannot be a 4×4 matrix alone).
+
+Full rationale, use case (distorted overlay on sensor image), and material policy: [sensor-rendering.md](./sensor-rendering.md). Implementation plan: [plans/phase-8-threejs-camera.md](./plans/phase-8-threejs-camera.md).
 
 ---
 

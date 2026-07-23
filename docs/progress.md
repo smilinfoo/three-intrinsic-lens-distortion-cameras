@@ -1,6 +1,6 @@
 # Progress
 
-Last updated: 2026-07-22
+Last updated: 2026-07-23
 
 ## Documentation map
 
@@ -10,6 +10,7 @@ Last updated: 2026-07-22
 | [docs/plans/](./plans/) | Per-phase implementation plans |
 | [docs/models/](./models/) | Per-model equations and API reference |
 | [docs/coordinate-conventions.md](./coordinate-conventions.md) | Coordinate frames, pipelines, policies |
+| [docs/sensor-rendering.md](./sensor-rendering.md) | Sensor camera + distortion plugin architecture (Phase 8) |
 
 ---
 
@@ -17,7 +18,7 @@ Last updated: 2026-07-22
 
 **Phase 7 — Inverse distortion and pixel-to-ray mapping** ✅ complete
 
-**Next:** Phase 8 — Three.js camera / shaders (not started).
+**Next:** Phase 8 — sensor cameras + distortion render plugin ([plan](./plans/phase-8-threejs-camera.md), **not approved**).
 
 ---
 
@@ -33,7 +34,7 @@ Last updated: 2026-07-22
 | **5 — OpenCV fisheye** | [plans/phase-5-fisheye.md](./plans/phase-5-fisheye.md) | ✅ Done |
 | **6 — Viz (minimal)** | [plans/phase-6-viz.md](./plans/phase-6-viz.md) | ✅ Done |
 | **7 — Inverse distortion & pixel-to-ray** | [plans/phase-7-inverse-and-rays.md](./plans/phase-7-inverse-and-rays.md) | ✅ Done |
-| **8 — Three.js camera / shaders** | [plans/phase-8-threejs-camera.md](./plans/phase-8-threejs-camera.md) | 📝 Placeholder (not approved) |
+| **8 — Sensor cameras & render plugin** | [plans/phase-8-threejs-camera.md](./plans/phase-8-threejs-camera.md) | 📝 Placeholder (not approved) |
 
 ### Phase 7 sub-steps
 
@@ -72,14 +73,16 @@ npm run setup && npm test && npm run dev
 
 ## Next step (start here)
 
-**Phase 8 — Three.js camera / shaders**
+**Phase 8 — Sensor cameras & distortion render plugin**
 
-Consume `pixelToCameraRay*` output; convert to Three.js frame via `coords/three.ts` when placing rays in the scene graph.
+Architecture: [`SensorCamera`](./sensor-rendering.md) (user API: model + `K` + params) + [`DistortionRenderPlugin`](./sensor-rendering.md) (patches built-in materials; no user geometry/material edits). Forward distortion for overlay on pre-captured sensor images.
+
+Plan (placeholder, not approved): [plans/phase-8-threejs-camera.md](./plans/phase-8-threejs-camera.md) · Rationale: [sensor-rendering.md](./sensor-rendering.md)
 
 ---
 
 ## Prompts
 
-**Implement Phase 8:**
+**Implement Phase 8 (after plan approval):**
 
-> Add custom Three.js camera or shader path that uses `pixelToCameraRay` from core, converting rays to Three.js frame at the viz boundary.
+> Implement Phase 8 per `docs/plans/phase-8-threejs-camera.md`: `SensorCamera` + `DistortionRenderPlugin` (first-class). Built-in materials only; forward distortion for sensor overlay. See `docs/sensor-rendering.md`.

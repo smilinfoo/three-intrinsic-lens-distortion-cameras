@@ -11,6 +11,7 @@ three-camera-lab/
 ├── docs/
 │   ├── progress.md              # Current phase + next step
 │   ├── coordinate-conventions.md
+│   ├── sensor-rendering.md      # SensorCamera + DistortionRenderPlugin (Phase 8)
 │   ├── plans/                   # Per-phase implementation plans
 │   └── models/                  # Per-model equations + API
 ├── packages/
@@ -54,7 +55,7 @@ PYTHON=/path/to/python3.12 npm run setup:python
 | `npm run setup` | Install JS deps + create `.venv` and install Python reference package |
 | `npm run setup:python` | Create/update `.venv` only |
 | `npm run generate:fixtures` | Regenerate OpenCV golden JSON fixtures |
-| `npm test` | Run Vitest (41 tests in `@three-camera-lab/core`) |
+| `npm test` | Run Vitest (87 tests in `@three-camera-lab/core`) |
 | `npm run dev` | Start the Vite dev server (Three.js scene) |
 | `npm run verify:opencv` | Run OpenCV verification inside `.venv` |
 
@@ -67,6 +68,8 @@ Pure camera mathematics. No Three.js dependency. Implements pinhole, Brown-Conra
 ### `@three-camera-lab/viz`
 
 Three.js visualization layer. Depends on `core` for projection math. **`npm run dev`** opens a split demo: 2D projection grid (model switcher, OpenCV pixel space) + Three.js scene.
+
+Phase 8 (planned) adds **sensor-accurate rendering**: [`SensorCamera`](./docs/sensor-rendering.md) + [`DistortionRenderPlugin`](./docs/sensor-rendering.md) so 3D content displays with lens distortion without modifying user meshes or materials. See [sensor-rendering.md](./docs/sensor-rendering.md).
 
 ### Viz demo (Phase 6)
 
@@ -89,8 +92,8 @@ Python/OpenCV ground truth. Generates golden test vectors and provides verificat
 | 4. Rational polynomial | ✅ Done | [models/rational.md](./docs/models/rational.md) |
 | 5. OpenCV fisheye | ✅ Done | [models/fisheye.md](./docs/models/fisheye.md) |
 | 6. Viz per model | ✅ Done | `npm run dev` — projection grid demo |
-| 7. Inverse distortion & pixel-to-ray | 📋 Planned | [plans/phase-7-inverse-and-rays.md](./docs/plans/phase-7-inverse-and-rays.md) (7A/7B/7C) |
-| 8. Custom cameras / shaders | ⬜ Pending | `packages/viz/cameras`, `shaders` |
+| 7. Inverse distortion & pixel-to-ray | ✅ Done | [plans/phase-7-inverse-and-rays.md](./docs/plans/phase-7-inverse-and-rays.md) |
+| 8. Sensor cameras & render plugin | 📝 Planned | [plans/phase-8-threejs-camera.md](./docs/plans/phase-8-threejs-camera.md), [sensor-rendering.md](./docs/sensor-rendering.md) |
 
 Detailed phase checklist: [docs/progress.md](./docs/progress.md) · Plans: [docs/plans/](./docs/plans/)
 

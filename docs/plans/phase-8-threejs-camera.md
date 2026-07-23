@@ -1,8 +1,8 @@
-# Phase 8 Plan — OpenCV Three.js Cameras (Placeholder)
+# Phase 8 Plan — Sensor Cameras & Distortion Render Plugin (Placeholder)
 
 Status: **placeholder — not approved**
 
-Related: [coordinate-conventions.md](../coordinate-conventions.md) §3–4, [phase-6-viz.md](./phase-6-viz.md), [phase-7-inverse-and-rays.md](./phase-7-inverse-and-rays.md)
+Related: [sensor-rendering.md](../sensor-rendering.md) (architecture rationale), [coordinate-conventions.md](../coordinate-conventions.md) §3–4, [phase-6-viz.md](./phase-6-viz.md), [phase-7-inverse-and-rays.md](./phase-7-inverse-and-rays.md)
 
 > **This document is a draft placeholder.** Do not implement until the plan is reviewed and approved.
 
@@ -10,29 +10,41 @@ Related: [coordinate-conventions.md](../coordinate-conventions.md) §3–4, [pha
 
 ## Goal
 
-Wire the **right-hand Three.js panel** (`npm run dev`) to render through OpenCV-compatible custom cameras that visually match the **left-hand 2D projection canvas** (Phase 6) and remain consistent with golden tests in `core` (Phases 2–7).
+Enable **sensor-accurate 3D rendering** in Three.js: project points, lines, meshes, and instanced geometry as if seen through a calibrated sensor (OpenCV models first; extensible later), superimposable on a pre-captured 2D sensor image.
+
+Wire the **right-hand Three.js panel** (`npm run dev`) to use this path while the **left-hand 2D canvas** (Phase 6) remains a reference overlay.
 
 | Today | Phase 8 |
 |-------|---------|
-| Left: `core.project*` on 2D canvas | Unchanged (reference overlay) |
-| Right: stock `PerspectiveCamera` + cube | Custom OpenCV camera + scene grid |
-| No link between panels | Same `K`, coeffs, and model from shared preset |
+| Left: `core.project*` on 2D canvas | Unchanged (reference) |
+| Right: stock `PerspectiveCamera` + cube | `SensorCamera` + `DistortionRenderPlugin` |
+| User must understand demo internals | User supplies model + `K` + params only |
 
-**Approach:** Camera-based integration to **minimize shader dependence**. Linear intrinsics (`K`) are encoded in a supplied **`projectionMatrix`**. Non-linear distortion uses **minimal vertex-shader insertions** owned by the camera — not a standalone shader-heavy render pipeline.
+**Primary use case:** Distorted 3D annotations aligned with a fixed sensor photograph sharing the same intrinsics and distortion model.
 
-**In scope:** Pinhole + all four distortion models; `projectionMatrix` from `K`; distortion via camera-attached shader patches; ray picking via Phase 7 APIs; demo wiring.
-
-**Out of scope:** Extrinsics / `rvec,tvec`; full-image undistort maps (`cv2.initUndistortRectifyMap`); generic camera factory; automated visual regression; new numerical math in `viz` beyond matrix assembly and documented GLSL mirrors.
+See [sensor-rendering.md](../sensor-rendering.md) for full architectural rationale.
 
 ---
 
 ## Design principles
 
-1. **Camera-first** — Each model is a `THREE.Camera` subclass that owns intrinsics, coeffs, image size, near/far, and update lifecycle.
-2. **Projection matrix for linear part** — `fx, fy, cx, cy` encoded in `camera.projectionMatrix`; pinhole needs no custom shader.
-3. **Shader insertions only for non-linearity** — Forward distortion in the vertex path before clip-space; camera registers patches on scene materials.
-4. **Core is ground truth** — JS projection / undistort / rays in `@three-camera-lab/core`; GLSL chunks are documented mirrors of `distortion/*.ts`.
-5. **Frame boundary explicit** — OpenCV ↔ Three.js via `coords/three.ts` only at the viz boundary.
+1. **Two first-class components** — **`SensorCamera`** (custom `THREE.Camera`: config, `projectionMatrix`, uniforms) and **`DistortionRenderPlugin`** (global material/render hook). The camera is the user API; the plugin is what makes "no material edits" possible. Neither replaces the other.
+
+2. **Sensor-first UX** — User selects distortion model and supplies `K` + parameters via `createSensorCamera({ … })`. Frame conversion, normalized-plane math, and plugin wiring are internal.
+
+3. **No user geometry/material changes** — Points, lines, meshes, and `InstancedMesh` with **built-in** Three.js materials render without modification. The plugin patches standard materials at compile/render time.
+
+4. **Projection matrix for the linear part** — `fx, fy, cx, cy` + near/far encoded in `SensorCamera.projectionMatrix`. Pinhole / zero-distortion needs no plugin.
+
+5. **Plugin for the non-linear part** — Forward distortion runs in a **vertex-shader insertion** applied by `DistortionRenderPlugin`. Not a standalone fragment-shader render pipeline; stock fragment shaders unchanged.
+
+6. **Core is ground truth** — Numerical definitions in `@three-camera-lab/core`. GLSL chunks in `viz` are documented mirrors of `distortion/*.ts`.
+
+7. **Frame boundary explicit** — OpenCV ↔ Three.js via `coords/three.ts` only inside camera/plugin code, not in user scene code.
+
+8. **Forward distortion for sensor overlay** — Project 3D content to **distorted** pixel locations to align with a real sensor image. Do not use undistort-then-warp-framebuffer as the primary path.
+
+9. **Extensible models** — OpenCV models ship first; new backends add core forward math + GLSL chunk + camera factory branch without breaking the user API.
 
 ---
 
@@ -45,9 +57,7 @@ Use the same defaults as native `THREE.PerspectiveCamera`:
 | `near` | `0.1` | Three.js constructor default |
 | `far` | `2000` | Three.js constructor default |
 
-OpenCV cameras accept optional `near` / `far` overrides but default to these values. The demo's current `createScene()` uses `far = 100`; Phase 8 should align with Three.js defaults unless a preset explicitly overrides them.
-
-FOV is **not** the primary parameter — intrinsics come from OpenCV `K`. Near/far define the clip range for the custom projection matrix only.
+FOV is **not** the primary parameter — intrinsics come from OpenCV `K`. Near/far define the clip range for the custom projection matrix.
 
 ---
 
@@ -59,127 +69,144 @@ packages/core/                          (unchanged — math authority)
 
 packages/viz/src/
   cameras/
-    OpenCvCameraBase.ts                 shared: K, imageSize, near/far, model id
-    buildOpenCvProjectionMatrix.ts      K + near/far → THREE.Matrix4
-    OpenCvPinholeCamera.ts              projectionMatrix only
-    OpenCvBrownConradyCamera.ts         + distortion uniforms + shader plugin
+    SensorCameraBase.ts                 K, imageSize, near/far, model id, uniforms
+    buildSensorProjectionMatrix.ts      K + near/far → THREE.Matrix4
+    createSensorCamera.ts               factory: model + params → SensorCamera
+    OpenCvPinholeCamera.ts              projectionMatrix only; plugin off
+    OpenCvBrownConradyCamera.ts
     OpenCvRationalCamera.ts
     OpenCvFisheyeCamera.ts
-    OpenCvDistortionShaderPlugin.ts     onBeforeCompile insertions (minimal)
-    pixelToRay.ts                       wraps core pixelToCameraRay* + frame flip
+    pixelToRay.ts                       core pixelToCameraRay* + frame flip
+  render/
+    DistortionRenderPlugin.ts           FIRST-CLASS: global onBeforeCompile / render hook
+    attachDistortionPlugin.ts           bind plugin ↔ camera ↔ renderer
   shaders/chunks/
     brown-conrady.glsl.ts               mirrors core forward distort
     rational.glsl.ts
     fisheye.glsl.ts
   demo/
-    modelPresets.ts                     shared K + coeffs (extend or split presets)
-    createProjectionDemo.ts             left panel (unchanged role)
+    modelPresets.ts                     shared K + coeffs
+    createProjectionDemo.ts             left panel (unchanged)
   scene/
-    createScene.ts                      accepts OpenCv*Camera
-  main.ts                               model switcher drives camera + left canvas
+    createScene.ts                      SensorCamera + plugin attach
+  main.ts                               model switcher + optional sensor image backdrop
 ```
 
-**Dependency direction:** `viz/cameras` → `core` only. No `core` → Three.js.
+**Dependency direction:** `viz` → `core` only. No `core` → Three.js.
+
+### Component interaction
+
+```
+createSensorCamera({ model, K, dist, … })
+        │
+        ▼
+   SensorCamera ──────────────► projectionMatrix (pinhole / K)
+        │                       uniforms (dist coeffs, image size)
+        │
+        ▼
+DistortionRenderPlugin.attach(renderer, camera)
+        │
+        ▼
+renderer.render(scene, camera)  →  built-in materials patched automatically
+```
+
+---
+
+## Material support policy
+
+**In scope (Phase 8 target):** All built-in materials using Three.js standard projection chunks — `MeshBasicMaterial`, `MeshStandardMaterial`, `MeshPhongMaterial`, `LineBasicMaterial`, `PointsMaterial`, etc.
+
+**Out of scope (document exclusions):** Custom `ShaderMaterial` / `RawShaderMaterial`; `CSS2DRenderer`; sprites; materials that bypass `#include <project_vertex>`.
+
+**InstancedMesh:** Supported — instance transform applied before camera-space distortion.
 
 ---
 
 ## Rendering pipeline
 
-```
-World vertex (Three.js, Y-up)
-        │
-        ▼
-  modelViewMatrix  →  camera-space point (Three.js: visible if Z < 0)
-        │
-        ├─ Pinhole path ──────────────────────────────────────┐
-        │   projectionMatrix from K  →  clip space            │
-        │                                                       │
-        └─ Distorted path ──────────────────────────────────────┤
-            VS insertion:                                       │
-              Three.js cam → OpenCV cam (S on position)         │
-              normalize (x,y) = (X/Z, Y/Z)                      │
-              forward distort* (GLSL chunk = core equations)    │
-              apply K (linear) → NDC / clip                     │
-                                                                ▼
-                                                         stock fragment shaders
-```
+See [sensor-rendering.md](../sensor-rendering.md) for rationale. Summary:
 
-Distortion insertions run in the **vertex shader** so standard materials (`MeshStandardMaterial`, `LineBasicMaterial`, etc.) work without custom fragment shaders.
+- Pinhole: `projectionMatrix` only, plugin disabled.
+- Distorted: plugin injects forward distort in vertex stage before clip-space.
 
 ---
 
 ## Sub-phases (implementation order)
 
-### 8A — Pinhole camera (`projectionMatrix` only)
+### 8A — Pinhole `SensorCamera` (`projectionMatrix` only)
 
 | Item | Detail |
 |------|--------|
-| Module | `buildOpenCvProjectionMatrix.ts`, `OpenCvPinholeCamera.ts` |
-| Behavior | `updateProjectionMatrix()` builds matrix from `K`, image size, `near=0.1`, `far=2000` |
+| Module | `buildSensorProjectionMatrix.ts`, `SensorCameraBase.ts`, `OpenCvPinholeCamera.ts`, `createSensorCamera.ts` |
+| Behavior | `updateProjectionMatrix()` from `K`, image size, `near=0.1`, `far=2000` |
+| Plugin | Not attached for pinhole |
 | Wiring | Replace `PerspectiveCamera` in `createScene.ts` |
-| Shaders | None |
-| QA | Unit-test matrix at sample points; manual alignment with left pinhole grid |
+| QA | Matrix unit tests; manual alignment with left pinhole grid |
 
-### 8B — Distortion shader plugin (Brown-Conrady, rational)
+### 8B — `DistortionRenderPlugin` (first-class) + Brown-Conrady / rational
+
+**This sub-phase delivers the plugin as a standalone component, not an implementation detail of camera classes.**
 
 | Item | Detail |
 |------|--------|
-| Module | `OpenCvDistortionShaderPlugin.ts`, GLSL chunks, `OpenCvBrownConradyCamera`, `OpenCvRationalCamera` |
-| Behavior | Camera owns coeffs as uniforms; patches materials via `onBeforeCompile` |
-| Pinhole | Plugin disabled — pure `projectionMatrix` path |
-| QA | Manual match vs left 2D distorted grid |
+| **`DistortionRenderPlugin`** | Global render hook: registers `onBeforeCompile` (or equivalent) for built-in materials; reads uniforms from active `SensorCamera`; applies VS insertion from GLSL chunks |
+| **`attachDistortionPlugin(renderer, camera)`** | Lifecycle: attach on camera change, detach for pinhole, handle material compile order |
+| **GLSL chunks** | `brown-conrady.glsl.ts`, `rational.glsl.ts` — mirrors of `core/distortion/*` |
+| **`OpenCvBrownConradyCamera` / `OpenCvRationalCamera`** | Extend base; expose coeffs + model id; **do not** embed patching logic — delegate to plugin |
+| **Acceptance** | Add mesh + lines + points + `InstancedMesh` to scene with stock materials; switch to Brown-Conrady; **no material/geometry edits**; overlay aligns with left 2D canvas |
+| **Pinhole** | Plugin detached — pure `projectionMatrix` path |
+| **QA** | Manual match vs left 2D distorted grid; spot-check CPU `core.project*` vs GPU at sample pixels |
 
-### 8C — Fisheye camera
+**8B definition of done (plugin):**
+
+- [ ] Plugin is a separate module under `viz/src/render/`
+- [ ] Camera classes only supply config + uniforms; plugin owns all material patching
+- [ ] At least one mesh, one line, one points cloud, one `InstancedMesh` render correctly under distortion without user-side material changes
+
+### 8C — Fisheye via plugin
 
 | Item | Detail |
 |------|--------|
 | Module | `fisheye.glsl.ts`, `OpenCvFisheyeCamera.ts` |
-| Note | k = 0 baseline is **equidistant**, not pinhole (same as Phase 6) |
-| QA | Curvature matches left panel; k = 0 ≠ pinhole regression |
+| Plugin | Reuses `DistortionRenderPlugin` with fisheye chunk + uniforms |
+| Note | k = 0 baseline is **equidistant**, not pinhole (Phase 6 parity) |
+| QA | Curvature matches left panel |
 
 ### 8D — Rays and picking
 
 | Item | Detail |
 |------|--------|
-| Module | `pixelToRay.ts`, optional `OpenCvRaycaster` |
+| Module | `pixelToRay.ts`, optional `SensorRaycaster` |
 | API | `core.pixelToCameraRay*` → `opencvCameraToThreeJs` on direction |
 | Shaders | None |
 
-### 8E — Demo integration
+### 8E — Demo integration + sensor image overlay
 
 | Item | Detail |
 |------|--------|
-| Behavior | Model dropdown swaps left canvas preset **and** right `OpenCv*Camera` |
-| Config | Shared preset object (extend `modelPresets.ts` or split `cameraPresets.ts`) |
-| Scene | 3D grid analogous to Phase 6; geometry under `S = Rx(π)` group if authored in OpenCV frame |
+| Behavior | Model dropdown → left canvas + `createSensorCamera()` |
+| Backdrop | Optional pre-rendered sensor image behind WebGL canvas (same `K` + image size) |
+| Scene | 3D grid under `S = Rx(π)` group if authored in OpenCV frame |
+| Config | Shared preset from `modelPresets.ts` |
 
 ---
 
 ## Scene / coordinate strategy
 
-Phase 6 grid points live in the **OpenCV camera frame** (`Z > 0` forward). Three.js uses **Y-up, −Z view**.
-
-**Recommended:** Place demo geometry under a group with fixed rotation `Rx(π)` (= `S`) so content authored in OpenCV coordinates matches Phase 6 inputs. Camera at origin, looks down −Z. All frame conversions via `opencvCameraToThreeJs` / `threeJsCameraToOpenCv`.
-
-**Extrinsics:** Identity only (camera-frame points). OpenCV `rvec/tvec` pose conversion deferred.
+Demo geometry may live in OpenCV camera frame under a group with rotation `Rx(π)` (= `S`). Extrinsics / `rvec,tvec` deferred.
 
 ---
 
 ## Shared configuration
 
-One preset drives both panels:
-
 ```typescript
-interface CameraPreset {
+interface SensorPreset {
   id: ModelId;
   intrinsics: CameraMatrix;
-  // dist coeffs per model
-  createCamera(width, height, near?, far?): OpenCvCamera;
-  baselineProject / distortedProject;  // left 2D canvas
+  createSensorCamera(width, height, near?, far?): SensorCamera;
+  baselineProject / distortedProject;  // left 2D canvas only
 }
 ```
-
-Left panel: `core.project*`. Right panel: `createCamera()` with defaults `near=0.1`, `far=2000`.
 
 ---
 
@@ -187,20 +214,11 @@ Left panel: `core.project*`. Right panel: `createCamera()` with defaults `near=0
 
 | Layer | Approach |
 |-------|----------|
-| `core` | Existing 87 tests unchanged |
-| `buildOpenCvProjectionMatrix` | New unit tests in `viz` (matrix spot-checks) |
-| GLSL distortion | Manual visual QA vs left canvas |
-| Ray helper | Unit test: direction ∥ known 3D point |
-| Full render | No automated pixel golden tests (consistent with Phase 6) |
-
-### Manual QA matrix
-
-| Model | Left (2D) | Right (3D camera) |
-|-------|-----------|-------------------|
-| Pinhole | Straight grid | Straight grid, aligns with left |
-| Brown-Conrady | Gray vs cyan bend | Same bend via VS insertion |
-| Rational | Stronger bend | Matches left |
-| Fisheye | Equidistant baseline | k = 0 baseline ≠ pinhole |
+| `core` | 87 tests unchanged |
+| `buildSensorProjectionMatrix` | Viz unit tests |
+| `DistortionRenderPlugin` | Manual QA: mesh + line + points + instanced without material edits |
+| GLSL vs CPU | Spot-check sample vertices |
+| Full render | No automated pixel golden tests in viz |
 
 ---
 
@@ -208,34 +226,27 @@ Left panel: `core.project*`. Right panel: `createCamera()` with defaults `near=0
 
 | File | Sub-phase | Action |
 |------|-----------|--------|
-| `docs/plans/phase-8-threejs-camera.md` | — | This plan (placeholder) |
-| `packages/viz/src/cameras/*.ts` | 8A–8D | Custom cameras + matrix builder + plugin |
+| `docs/sensor-rendering.md` | — | Architecture rationale (reference) |
+| `docs/plans/phase-8-threejs-camera.md` | — | This plan |
+| `packages/viz/src/cameras/*.ts` | 8A, 8C | Sensor cameras + factory |
+| `packages/viz/src/render/DistortionRenderPlugin.ts` | **8B** | **First-class plugin** |
 | `packages/viz/src/shaders/chunks/*.ts` | 8B–8C | GLSL mirrors |
-| `packages/viz/src/scene/createScene.ts` | 8A | Accept `OpenCv*Camera` |
-| `packages/viz/src/main.ts` | 8E | Wire model switcher to camera |
-| `packages/viz/src/demo/modelPresets.ts` | 8E | Shared preset / `createCamera` |
-| `docs/progress.md` | — | Update on completion |
-| `docs/coordinate-conventions.md` | 8A | Document projection matrix + near/far policy |
-
-**Do not:**
-
-- Duplicate projection math outside `core` + documented GLSL mirrors
-- Add numerical golden tests in `viz`
-- Implement before plan approval
+| `packages/viz/src/scene/createScene.ts` | 8A, 8B | Camera + plugin attach |
+| `docs/coordinate-conventions.md` | 8A | Pointer to sensor-rendering |
 
 ---
 
 ## Definition of done
 
 - [ ] Plan reviewed and approved
-- [ ] `OpenCvPinholeCamera` renders via `projectionMatrix` from `K` (no custom FS)
-- [ ] Brown-Conrady, rational, fisheye use minimal VS insertions only
-- [ ] Near/far default to `0.1` / `2000` (Three.js `PerspectiveCamera` defaults)
-- [ ] Model switcher drives both left canvas and right camera
-- [ ] Right panel grid qualitatively matches left for all four models
-- [ ] Ray helper uses `pixelToCameraRay*` + `opencvCameraToThreeJs`
-- [ ] `npm test` green in `core`; viz unit tests for projection matrix
-- [ ] `docs/progress.md` updated; this plan marked ✅ complete
+- [ ] `SensorCamera` + `createSensorCamera()` user API
+- [ ] **`DistortionRenderPlugin` implemented as separate first-class module**
+- [ ] Built-in materials render distorted content without user material/geometry edits
+- [ ] Mesh, line, points, and `InstancedMesh` verified under distortion
+- [ ] Near/far default `0.1` / `2000`
+- [ ] All four OpenCV models; fisheye k=0 ≠ pinhole
+- [ ] Optional sensor image backdrop aligned via shared `K`
+- [ ] `npm test` green in `core`
 
 ---
 
@@ -243,20 +254,24 @@ Left panel: `core.project*`. Right panel: `createCamera()` with defaults `near=0
 
 | Risk | Mitigation |
 |------|------------|
-| GLSL drifts from core JS | Named mirror files; CPU vs GPU spot-checks |
-| Principal point + aspect in projection matrix | Dedicated builder with unit tests |
-| `onBeforeCompile` fragility | Centralize in one plugin; pin Three.js version |
-| Built-in materials resist patching | Document supported materials; prefer `LineBasicMaterial` |
-| Fisheye k = 0 ≠ pinhole | Separate camera class; explicit UI labels |
-| Behind-camera geometry | Cull when OpenCV `Z ≤ 0` |
+| Plugin misses some built-in materials | Central registry; test matrix per material type |
+| GLSL drifts from core | Named mirror files; CPU spot-checks |
+| Material compile order / hot reload | Document attach lifecycle; recompile on camera change |
+| Custom user shaders unsupported | Document exclusions in sensor-rendering.md |
+| `onBeforeCompile` API changes | Pin Three.js version; single plugin module |
 
 ---
 
 ## Open decisions (pending approval)
 
-- [ ] Scene geometry: OpenCV frame under `S`-rotated group vs per-vertex conversion at load
-- [ ] Which materials are in scope for distortion patching (`LineBasicMaterial` only vs all mesh materials)
-- [ ] Whether 8D ray picking is required for initial release or can follow 8E
+- [ ] Scene geometry: OpenCV frame under `S`-rotated group vs per-vertex conversion
+- [ ] Sensor image backdrop: HTML img vs textured quad in scene
+- [ ] Whether 8D ray picking is required for initial release
+
+**Resolved (pending approval):**
+
+- Material policy: built-in materials via global plugin ✅ (see [sensor-rendering.md](../sensor-rendering.md))
+- Architecture: `SensorCamera` + `DistortionRenderPlugin` as peers ✅
 
 ---
 
@@ -264,8 +279,12 @@ Left panel: `core.project*`. Right panel: `createCamera()` with defaults `near=0
 
 **Implement 8A only (after approval):**
 
-> Implement Phase 8A per `docs/plans/phase-8-threejs-camera.md`: `OpenCvPinholeCamera` + `buildOpenCvProjectionMatrix`, near=0.1 far=2000, wire into `createScene`. Manual QA vs 2D pinhole grid. No distortion shaders.
+> Implement Phase 8A: `SensorCamera` pinhole + `buildSensorProjectionMatrix`, `createSensorCamera`, near=0.1 far=2000. No plugin yet.
+
+**Implement 8B (after approval):**
+
+> Implement Phase 8B: `DistortionRenderPlugin` as first-class module under `viz/src/render/`, Brown-Conrady + rational GLSL chunks, camera supplies uniforms only. Verify mesh/line/points/InstancedMesh without material edits.
 
 **Implement full Phase 8 (after approval):**
 
-> Implement Phase 8 per `docs/plans/phase-8-threejs-camera.md`: 8A → 8B → 8C → 8D → 8E. Camera-based; distortion via minimal VS insertions only.
+> Implement Phase 8 per plan: 8A → 8B → 8C → 8D → 8E. SensorCamera + DistortionRenderPlugin architecture.
