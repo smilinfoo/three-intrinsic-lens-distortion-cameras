@@ -80,6 +80,18 @@ export interface FisheyeCoeffs {
   readonly k4: number;
 }
 
+/** Golden fixture schema for inverse distortion (normalized plane) tests. */
+export interface UndistortFixture {
+  readonly model: 'pinhole' | 'brown-conrady' | 'rational' | 'fisheye';
+  readonly direction: 'inverse-normalized';
+  readonly opencv_version: string;
+  readonly camera_matrix: readonly (readonly number[])[];
+  readonly dist_coeffs: readonly number[];
+  readonly pixels: readonly (readonly number[])[];
+  readonly expected_normalized: readonly (readonly number[])[];
+  readonly tolerance: Tolerance;
+}
+
 /** Golden fixture schema for fisheye projection tests. */
 export interface FisheyeFixture {
   readonly model: 'fisheye';

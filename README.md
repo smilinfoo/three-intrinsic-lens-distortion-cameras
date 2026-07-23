@@ -66,7 +66,14 @@ Pure camera mathematics. No Three.js dependency. Implements pinhole, Brown-Conra
 
 ### `@three-camera-lab/viz`
 
-Three.js visualization layer. Depends on `core` for projection math. Currently renders a basic scene (grid, axes, cube).
+Three.js visualization layer. Depends on `core` for projection math. **`npm run dev`** opens a split demo: 2D projection grid (model switcher, OpenCV pixel space) + Three.js scene.
+
+### Viz demo (Phase 6)
+
+- **Left panel:** grid projected with `core` functions — gray baseline + cyan distorted overlay
+- **Model switcher:** pinhole, Brown-Conrady, rational, fisheye
+- **Fisheye baseline:** equidistant (k = 0), not pinhole
+- Visual sanity check only; golden tests in `core` are the correctness gate
 
 ### `reference/`
 
@@ -81,8 +88,9 @@ Python/OpenCV ground truth. Generates golden test vectors and provides verificat
 | 3. Brown-Conrady distortion | ✅ Done | [models/brown-conrady.md](./docs/models/brown-conrady.md) |
 | 4. Rational polynomial | ✅ Done | [models/rational.md](./docs/models/rational.md) |
 | 5. OpenCV fisheye | ✅ Done | [models/fisheye.md](./docs/models/fisheye.md) |
-| 6. Viz per model | 🔄 Next | Grid / overlay demos using `core` |
-| 7. Custom cameras / shaders | ⬜ Pending | `packages/viz/cameras`, `shaders` |
+| 6. Viz per model | ✅ Done | `npm run dev` — projection grid demo |
+| 7. Inverse distortion & pixel-to-ray | 📋 Planned | [plans/phase-7-inverse-and-rays.md](./docs/plans/phase-7-inverse-and-rays.md) (7A/7B/7C) |
+| 8. Custom cameras / shaders | ⬜ Pending | `packages/viz/cameras`, `shaders` |
 
 Detailed phase checklist: [docs/progress.md](./docs/progress.md) · Plans: [docs/plans/](./docs/plans/)
 
