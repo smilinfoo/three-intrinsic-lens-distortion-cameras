@@ -10,7 +10,7 @@ import numpy as np
 
 def main() -> int:
     """Print versions and run a minimal cv2.projectPoints smoke test."""
-    print("Three-Camera Intrinsics and Distortion Lab — OpenCV verification")
+    print("Three.js Intrinsic Lens-Distortion Cameras — OpenCV verification")
     print(f"  Python:  {sys.version.split()[0]}")
     print(f"  NumPy:   {np.__version__}")
     print(f"  OpenCV:  {cv2.__version__}")

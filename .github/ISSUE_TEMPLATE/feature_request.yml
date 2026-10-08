@@ -41,7 +41,7 @@ body:
       label: Primary package
       options:
         - core
-        - viz
+        - cameras
         - reference / fixtures
         - docs / tooling
         - undecided

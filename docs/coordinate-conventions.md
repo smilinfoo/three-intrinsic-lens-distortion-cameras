@@ -4,9 +4,9 @@ This document is the contract between:
 
 - **OpenCV / Python reference** (`reference/`) — numerical ground truth
 - **Pure JavaScript camera math** (`packages/core/`) — uses OpenCV conventions internally
-- **Three.js visualization** (`packages/viz/`) — converts at the rendering boundary
+- **Three.js visualization** (`packages/cameras/`) — converts at the rendering boundary
 
-**Rule:** All projection math in `core` and all golden tests match OpenCV. Three.js frame conversion happens only in `coords/` helpers and the viz layer.
+**Rule:** All projection math in `core` and all golden tests match OpenCV. Three.js frame conversion happens only in `coords/` helpers and the cameras package (`SensorCamera` / shader patch).
 
 ---
 
@@ -189,14 +189,14 @@ const S = new Matrix4().makeRotationX(Math.PI);
 |-------|-------------------|-------|
 | `reference/` (Python) | OpenCV | `cv2.projectPoints`, calibration output |
 | `packages/core/` | OpenCV | All projection, distortion, golden-test comparisons |
-| `packages/viz/` | Three.js | Scene graph, sensor cameras, render plugin |
+| `packages/cameras/` | Three.js | Scene graph, sensor cameras, render plugin |
 | Boundary | `coords/opencv.ts`, `coords/three.ts` | Explicit conversion helpers |
 
 **Do not** silently flip axes inside distortion or projection code. Conversions belong in `coords/`.
 
-### Viz sensor rendering (Phase 8)
+### Cameras package: sensor rendering (Phase 8)
 
-GPU rendering of 3D content through a calibrated sensor uses two cooperating components in `packages/viz/`:
+GPU rendering of 3D content through a calibrated sensor uses two cooperating components in `packages/cameras/`:
 
 | Component | Role |
 |-----------|------|
@@ -229,7 +229,7 @@ Converting an OpenCV calibration to a Three.js camera pose requires:
 
 World-frame alignment depends on how the calibration target was defined (chessboard on a table vs vertical wall, etc.). Document the world frame per dataset; do not assume it matches the Three.js scene origin.
 
-> **Initial implementation note:** Golden tests will use identity extrinsics (`rvec = 0`, `tvec = 0`) with 3D points already expressed in the OpenCV camera frame. Extrinsic conversion will be added when viz needs a calibrated camera pose.
+> **Initial implementation note:** Golden tests will use identity extrinsics (`rvec = 0`, `tvec = 0`) with 3D points already expressed in the OpenCV camera frame. Extrinsic conversion will be added when the cameras package needs a calibrated camera pose.
 
 ---
 

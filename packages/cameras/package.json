@@ -1,0 +1,78 @@
+{
+  "name": "three-intrinsic-lens-distortion-cameras",
+  "version": "0.1.0",
+  "description": "Three.js SensorCamera + render plugin: render any scene through OpenCV pinhole, Brown-Conrady, rational or fisheye cameras using built-in materials.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/smilinfoo/three-camera-intrinsics-and-distortion-lab.git"
+  },
+  "bugs": {
+    "url": "https://github.com/smilinfoo/three-camera-intrinsics-and-distortion-lab/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "three",
+    "threejs",
+    "camera",
+    "opencv",
+    "lens-distortion",
+    "fisheye",
+    "calibration",
+    "shader"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsup",
+    "build:demo": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:visual": "playwright test",
+    "test:visual:regression": "VISUAL_BASELINES=1 playwright test"
+  },
+  "dependencies": {
+    "intrinsic-lens-distortion": "0.1.0"
+  },
+  "peerDependencies": {
+    "@types/three": ">=0.178.0 <0.179.0",
+    "three": ">=0.178.0 <0.179.0"
+  },
+  "peerDependenciesMeta": {
+    "@types/three": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^20.19.43",
+    "@types/three": "^0.178.1",
+    "three": "0.178.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.8.3",
+    "vite": "^7.0.5",
+    "vitest": "^3.2.4"
+  }
+}

@@ -3,7 +3,7 @@
  * No Three.js dependencies.
  */
 
-export const PACKAGE_NAME = '@three-camera-intrinsics-and-distortion-lab/core';
+export const PACKAGE_NAME = 'intrinsic-lens-distortion';
 
 export * from './types';
 export * from './coords/opencv';

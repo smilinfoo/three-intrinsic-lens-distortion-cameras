@@ -31,7 +31,7 @@ body:
     id: context
     attributes:
       label: Context
-      description: What you are building, which package (`core` vs `viz`), and what you have tried.
+      description: What you are building, which package (`core` vs `cameras`), and what you have tried.
     validations:
       required: false
 

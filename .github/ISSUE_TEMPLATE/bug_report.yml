@@ -25,7 +25,7 @@ body:
       label: Area
       options:
         - core (camera math)
-        - viz (Three.js demo / SensorRenderer)
+        - cameras (Three.js demo / SensorRenderer)
         - reference (Python fixtures / OpenCV)
         - docs / CI
         - other
@@ -65,7 +65,7 @@ body:
     id: environment
     attributes:
       label: Environment
-      description: OS, Node version, browser (for viz), commit or branch if not on main.
+      description: OS, Node version, browser (for the demo), commit or branch if not on main.
       placeholder: "macOS 15, Node 20.18, Chrome 138, main @ abc1234"
     validations:
       required: false

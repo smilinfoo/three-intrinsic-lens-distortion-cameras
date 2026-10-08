@@ -1,5 +1,5 @@
 {
-  "name": "three-camera-intrinsics-and-distortion-lab",
+  "name": "three-intrinsic-lens-distortion-cameras-workspace",
   "license": "MIT",
   "private": true,
   "workspaces": [
@@ -10,11 +10,18 @@
     "setup:python": "bash scripts/setup-python.sh",
     "generate:fixtures": "bash scripts/generate-fixtures.sh",
     "test": "npm run test --workspaces --if-present",
-    "dev": "npm run dev -w @three-camera-intrinsics-and-distortion-lab/viz",
-    "build": "npm run build --workspaces --if-present",
-    "verify:opencv": "bash scripts/verify-opencv.sh"
+    "dev": "npm run dev -w three-intrinsic-lens-distortion-cameras",
+    "build": "npm run build -w intrinsic-lens-distortion && npm run build -w three-intrinsic-lens-distortion-cameras",
+    "verify:opencv": "bash scripts/verify-opencv.sh",
+    "build:demo": "npm run build:demo -w three-intrinsic-lens-distortion-cameras",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "pack:check": "bash scripts/pack-check.sh",
+    "test:visual": "npm run test:visual -w three-intrinsic-lens-distortion-cameras",
+    "test:consumer": "bash scripts/consumer-smoke.sh"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
+    "publint": "^0.3.25",
     "typescript": "^5.8.3"
   }
 }

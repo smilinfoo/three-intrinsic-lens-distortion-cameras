@@ -1,18 +1,56 @@
 {
-  "name": "@three-camera-intrinsics-and-distortion-lab/core",
+  "name": "intrinsic-lens-distortion",
   "version": "0.1.0",
+  "description": "OpenCV-compatible camera projection, lens distortion, undistortion and pixel-to-ray math (pinhole, Brown-Conrady, rational, fisheye). No Three.js dependency.",
   "license": "MIT",
-  "private": true,
   "type": "module",
-  "main": "./src/index.ts",
-  "exports": {
-    ".": "./src/index.ts"
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/smilinfoo/three-camera-intrinsics-and-distortion-lab.git"
   },
+  "bugs": {
+    "url": "https://github.com/smilinfoo/three-camera-intrinsics-and-distortion-lab/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "camera",
+    "opencv",
+    "lens-distortion",
+    "intrinsics",
+    "undistort",
+    "projection",
+    "fisheye",
+    "brown-conrady"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "devDependencies": {
+    "tsup": "^8.5.1",
     "typescript": "^5.8.3",
     "vitest": "^3.2.4"
   }

@@ -1,6 +1,6 @@
 # Sensor Rendering Architecture
 
-Status: **implemented** (Phase 8 ✅). Architecture reference for `SensorRenderer` / `DistortionRenderPlugin`.
+Status: **implemented** (Phase 8 ✅, hardened in Phase 9 ✅). Architecture reference for `SensorCamera` / `SensorRenderer` / `DistortionRenderPlugin`.
 
 Related: [coordinate-conventions.md](./coordinate-conventions.md), [plans/phase-8-threejs-camera.md](./plans/phase-8-threejs-camera.md)
 
@@ -14,25 +14,31 @@ Render arbitrary Three.js content — points, lines, meshes, instanced geometry 
 
 **Initial models:** OpenCV (pinhole, Brown-Conrady, rational, fisheye). The architecture should allow additional distortion backends later without changing user-facing scene code.
 
-**UX target:** User selects a distortion model and supplies `K` and parameters. No knowledge of normalized planes, iterative undistort, or frame conversion required.
+**UX target:** User supplies the camera model, `K` and coefficients. No knowledge of normalized planes, iterative undistort, or frame conversion required.
 
 ---
 
 ## Design decision: two cooperating components
 
-A custom **`THREE.Camera` subclass alone is not sufficient.** Phase 8 uses two first-class pieces:
+A custom **`THREE.Camera` subclass alone is not sufficient.** The library has three pieces:
 
 | Component | Role |
 |-----------|------|
-| **`SensorCamera`** (custom `THREE.Camera`) | User-facing API: model id, intrinsics `K`, distortion params, image size, near/far. Builds pinhole `projectionMatrix`. Supplies uniforms to the render plugin. |
-| **`DistortionRenderPlugin`** | Global render hook: patches **standard** Three.js materials at compile/render time so forward distortion runs in the vertex path. User meshes and materials stay unchanged. |
+| **`SensorCamera`** (custom `THREE.Camera`) | User-facing data: model id, intrinsics `K`, distortion coefficients, image size, near/far. Builds the pinhole `projectionMatrix`. Values are mutable (`setIntrinsics`, `setCoefficients`). |
+| **`DistortionRenderPlugin`** | Patches **built-in** Three.js materials once (`onBeforeCompile`) so forward distortion runs in the vertex path, and owns the shared uniforms. User meshes and materials stay unchanged. |
+| **`SensorRenderer`** | Public render entry: `render(renderer, scene, camera)` publishes the camera to the plugin, renders, and always disarms the plugin afterwards (also on error). |
 
 ```
-User code                          Internal
-─────────                          ────────
-scene.add(mesh, lines, points)  →  unchanged
-sensor.render(renderer, scene)  →  SensorRenderer → SensorCamera + DistortionRenderPlugin
-SensorRenderer.create({ model })
+User code                                   Internal
+─────────                                   ────────
+scene.add(mesh, lines, points)           →  unchanged
+sensor.render(renderer, scene, camera)   →  plugin.beginRender(scene, camera)
+                                              · patch built-in materials (idempotent)
+                                              · write camera → shared uniforms
+                                              · uSensorActive = 1
+                                            renderer.render(scene, camera)
+                                            plugin.endRender()  (finally)
+                                              · uSensorActive = 0, culling restored
 ```
 
 **Why not camera-only?**
@@ -40,7 +46,7 @@ SensorRenderer.create({ model })
 - **Linear intrinsics (`K`)** fit in `camera.projectionMatrix` ✅
 - **Non-linear distortion** depends on each vertex's direction from the camera ❌ cannot be encoded in a single 4×4 matrix for all vertices
 
-Distortion must run in the **vertex shader** (or an equivalent full-scene technique). The camera owns *what* to apply; the plugin owns *how* to apply it across the scene without per-material user edits.
+Distortion must run in the **vertex shader**. The camera owns *what* to apply; the plugin owns *how* to apply it across the scene without per-material user edits.
 
 ---
 
@@ -54,8 +60,6 @@ For overlay on a real sensor photo, annotations must land at **distorted pixel l
 | Render undistorted, warp framebuffer to distorted | ❌ Wrong direction for aligning 3D vectors with a distorted photo |
 | CPU re-project / rebuild geometry each frame | ❌ Violates "don't change mesh" |
 
-Forward distortion in the projection path is the correct model for this use case.
-
 ---
 
 ## Rendering pipeline
@@ -66,56 +70,92 @@ World vertex (Three.js scene graph)
         ▼
   modelViewMatrix  →  camera-space (Three.js: visible when Z < 0)
         │
-        ├─ Pinhole (no distortion) ─────────────────────────────┐
-        │   projectionMatrix from K  →  clip space               │
-        │                                                          │
-        └─ Distorted models ──────────────────────────────────────┤
-            DistortionRenderPlugin (vertex insertion):             │
-              camera-space → OpenCV camera-space (S)               │
-              normalize (x,y) = (X/Z, Y/Z)                         │
-              forward distort (GLSL mirror of core)                │
-              apply K → clip / NDC                                 │
-                                                                   ▼
-                                                            stock fragment shaders
+        ├─ uSensorActive == 0 (stock camera / pinhole sensor) ───┐
+        │   projectionMatrix · mvPosition  (stock projection)     │
+        │                                                         │
+        └─ uSensorActive == 1 ────────────────────────────────────┤
+            camera-space → OpenCV camera-space (S)                │
+            normalize (x,y) = (X/Z, Y/Z)                          │
+            forward distort (GLSL mirror of core)                 │
+            apply K → NDC (u/W, v/H), keep pinhole depth          │
+                                                                  ▼
+                                                        stock fragment shaders
 ```
 
-- **Pinhole:** `DistortionRenderPlugin` inactive; `SensorCamera.projectionMatrix` only.
-- **Distorted models:** plugin active; minimal **vertex** insertions only (no custom fragment pipeline).
+- **Pinhole sensor cameras** do not patch anything: `SensorCamera.projectionMatrix` is exact.
+- **Distorting cameras** patch built-in materials with a minimal **vertex-only** insertion (no custom fragment pipeline). Model selection (`uDistortionModel`) and all coefficients are uniforms, so one compiled program serves every model.
+- Math authority remains in `intrinsic-lens-distortion`. GLSL chunks in `cameras` are documented mirrors of `distortion/*.ts`, and a GPU parity test checks them against `core` (see Verification).
 
-Math authority remains in `@three-camera-intrinsics-and-distortion-lab/core`. GLSL chunks in `viz` are documented mirrors of `distortion/*.ts`.
+### Shared uniforms (why one program works for many cameras)
+
+All patched materials reference **the same uniform objects** (`SENSOR_UNIFORMS`). `SensorRenderer.render` writes the active camera into them just before drawing and sets `uSensorActive` to `0` afterwards. Consequences:
+
+- Several cameras — even of the same model with different `K` — can render one scene, via one or several `SensorRenderer`s.
+- Changing intrinsics or coefficients needs **no recompile** (a plain uniform write).
+- Rendering the scene with a stock Three.js camera afterwards is undistorted, because the shader falls back to `projectionMatrix * mvPosition` when `uSensorActive` is `0`.
+- The program cache key is a constant (`sensor-distortion-v1`, combined with any user-provided key). Patch bookkeeping lives on the material, not the plugin, so patches are never owned by one plugin instance.
+
+Earlier iterations baked uniforms in at compile time and tied patch state to the first plugin that touched a material; that rendered every view with the first camera and relied on forcing a recompile every frame.
 
 ---
 
 ## Material policy
 
-**Target:** All **built-in** Three.js materials work without user modification.
+**Target:** All **built-in** Three.js mesh/line/point materials work without user modification.
 
-| Content type | Expected support |
-|--------------|------------------|
-| `Mesh` + `MeshBasicMaterial`, `MeshStandardMaterial`, … | ✅ |
-| `LineSegments` / `Line` + `LineBasicMaterial` | ✅ |
+| Content type | Support |
+|--------------|---------|
+| `Mesh` + `MeshBasicMaterial`, `MeshLambertMaterial`, `MeshPhongMaterial`, `MeshStandardMaterial`, `MeshPhysicalMaterial`, `MeshToonMaterial`, `MeshNormalMaterial`, `MeshMatcapMaterial`, `ShadowMaterial` | ✅ |
+| `LineSegments` / `Line` + `LineBasicMaterial`, `LineDashedMaterial` | ✅ |
 | `Points` + `PointsMaterial` | ✅ |
-| `InstancedMesh` | ✅ (per-instance transform, then shared projection hook) |
+| `InstancedMesh`, multi-material meshes | ✅ (per-instance transform, then shared projection hook) |
+| Shadows | ✅ (Three's internal depth/distance materials are never patched; the light's shadow pass is unaffected) |
+| Custom `ShaderMaterial` that includes `<project_vertex>` | ⚙️ opt-in: `material.userData.sensorDistortion = true` |
 
-**Explicit exclusions (document, do not promise):**
+**Not supported (documented, with a one-time console warning where detectable):**
 
-- Custom `ShaderMaterial` / `RawShaderMaterial` that bypass Three.js projection chunks
-- `CSS2DRenderer`, sprites, some `examples/jsm` line types
-- Materials compiled before the plugin is registered
+- Other custom `ShaderMaterial` / `RawShaderMaterial` that bypass the projection chunk
+- `Sprite` / `SpriteMaterial` (no `project_vertex` in the sprite shader)
+- `Line2` / `LineMaterial` and other `examples/jsm` line types, `CSS2DRenderer`
+- WebGPU / WebGL 1
 
-The plugin applies patches globally (e.g. via centralized `onBeforeCompile` handling tied to render lifecycle), not by requiring users to call `camera.patchMaterial(material)` for every asset.
+### Behaviours to know
+
+- **Distortion is per-vertex.** Fragments interpolate linearly between vertices, so large flat triangles stay straight. Tessellate flat geometry (the example scene's floor and wall are subdivided for this reason).
+- **Behind-camera points** (`Z_cv ≤ 0`) are sent outside clip space; triangles straddling the camera plane are not rendered correctly, and fisheye FOV above 180° is unsupported.
+- **Frustum culling** uses the camera's pinhole projection matrix, which wrongly rejects objects that distortion pulls into the image. While a distorting camera renders, `frustumCulled` is disabled on scene objects and restored afterwards (`disableFrustumCulling` option, default on).
+- **Canvas aspect.** The NDC mapping assumes the viewport spans the full `imageWidth × imageHeight` image. Use `fitRendererToSensor` (exact size or letterbox) so overlays align.
+- **No object selection yet.** Distortion only affects *rendering*; real geometry is unchanged. Picking an object under a sensor pixel needs the inverse path (pixel → undistorted ray → intersect scene), which `core`/`pixelToThreeRayFromCamera` provide only as far as the ray direction. Scene intersection is planned, not implemented, and `THREE.Raycaster.setFromCamera` is invalid for distorting cameras because it uses the pinhole `projectionMatrix`.
+- **Pixel origin.** The shader maps `u` from the pixel's top-left *edge* (`ndc = 2u/W − 1`); OpenCV/`core` use the pixel *centre* with no ±0.5 offset. Expect up to half a pixel difference against a real photo.
 
 ---
 
 ## Usage
 
-**Single source of truth:** module docstring in [`packages/viz/src/sensor/SensorRenderer.ts`](../packages/viz/src/sensor/SensorRenderer.ts).
+**Single source of truth:** module docstring in [`packages/cameras/src/sensor/SensorRenderer.ts`](../packages/cameras/src/sensor/SensorRenderer.ts) (mirrored in the root README and [`packages/cameras/README.md`](../packages/cameras/README.md)).
 
-Do not add usage examples elsewhere — link to that file. The demo (`main.ts`) follows it via `SensorRenderer.create()` and `sensor.render()`.
+```typescript
+const camera = new SensorCamera({ model: 'brown-conrady', intrinsics, imageWidth, imageHeight, brownConrady });
+fitRendererToSensor(renderer, camera);
+const sensor = new SensorRenderer();
+sensor.render(renderer, scene, camera);
+```
 
-Background sensor image (HTML `<img>` behind canvas, or textured quad) uses the **same** `K`, image size, and distortion model so overlays align.
+Position the camera like any Three.js camera (looks down −Z, +Y up). Frame conversion (`opencvCameraToThreeJs`) happens inside the shader — user scene content is not rotated.
 
-Frame conversion (`opencvCameraToThreeJs`) happens inside the camera/plugin — not in user code.
+A background sensor image (HTML `<img>` behind the canvas, or a textured quad) uses the **same** `K`, image size and distortion model so overlays align.
+
+Presets (`createSensorCamera({ model })`, model switching) live in the **demo app only** — they are not part of the library's public API (`packages/cameras/src/index.ts`).
+
+---
+
+## Verification
+
+| Layer | Where | What |
+|-------|-------|------|
+| Unit | `packages/cameras/test/*.test.ts` | Patching per material class, shared-uniform identity, constant cache key, no per-frame `needsUpdate`, arming/disarming (incl. on throw), culling restore, camera mutation, public API surface |
+| GPU parity | `packages/cameras/test/visual/` (Playwright, software WebGL) | Probe points rendered through each model land within 1 px of the `core` projection; several cameras on one scene; coefficient changes on a live camera; stock camera afterwards undistorted; every built-in material renders |
+| Visual | demo (`npm run dev`) | One scene through four cameras with a CPU-projection overlay (magenta) and per-view probe error; **"Try your own camera"** form for custom intrinsics/coefficients with a pass/fail check against `core` |
 
 ---
 
@@ -124,10 +164,10 @@ Frame conversion (`opencvCameraToThreeJs`) happens inside the camera/plugin — 
 New distortion backends add:
 
 1. Forward math in `core` (if not already present)
-2. A GLSL chunk mirror in `viz/shaders/chunks/`
-3. A `SensorCamera` factory branch + plugin uniform layout
+2. A GLSL chunk mirror in `cameras/shaders/chunks/` and a model id in `uDistortionModel`
+3. `SensorCamera` coefficient payload + a branch in `writeSensorUniforms`
 
-The user-facing API (`SensorRenderer.create({ model, … })` or custom `SensorCamera`) stays stable. OpenCV models are the first backend, not the architecture ceiling.
+The user-facing API (`new SensorCamera({ model, … })`, `SensorRenderer.render`) stays stable. OpenCV models are the first backend, not the architecture ceiling.
 
 ---
 
@@ -138,24 +178,26 @@ The user-facing API (`SensorRenderer.create({ model, … })` or custom `SensorCa
 | `reference/` | OpenCV ground truth, golden fixtures |
 | `packages/core/` | All numerical camera math (OpenCV conventions) |
 | `packages/core/coords/three.ts` | OpenCV ↔ Three.js point/direction conversion |
-| `packages/viz/cameras/` | `SensorCamera` subclasses, projection matrix builder |
-| `packages/viz/render/` (or `cameras/plugin/`) | `DistortionRenderPlugin` |
-| `packages/viz/shaders/chunks/` | GLSL mirrors of core forward distortion |
+| `packages/cameras/cameras/` | `SensorCamera`, projection matrix builder, pixel→ray helper |
+| `packages/cameras/render/` | `DistortionRenderPlugin`, shared uniforms |
+| `packages/cameras/sensor/` | `SensorRenderer`, `fitRendererToSensor` |
+| `packages/cameras/shaders/chunks/` | GLSL mirrors of core forward distortion |
+| `packages/cameras/src/index.ts` | Public API surface (nothing from `demo/` or `main.ts`) |
+| `packages/cameras/src/demo/`, `scene/`, `main.ts` | Demo app and example scene (not published) |
 | User scene | Meshes, materials, instancing — **unchanged** |
 
-**Do not** duplicate projection math in `viz` beyond matrix assembly and documented GLSL mirrors.
+**Do not** duplicate projection math in `cameras` beyond matrix assembly and documented GLSL mirrors.
 
 ---
 
-## Relationship to Phase 6 / 7
+## Relationship to Phase 6 / 7 / 9
 
 | Phase | Role |
 |-------|------|
 | **6** | 2D canvas overlay in OpenCV pixel space — pedagogical reference |
-| **7** | Inverse path + rays in `core` — picking, validation, future tools |
+| **7** | Inverse path + rays in `core` — picking, validation, custom-camera probe placement |
 | **8** | GPU sensor rendering via `SensorCamera` + `DistortionRenderPlugin` |
-
-Phase 6 left panel remains a visual reference. Phase 7 `pixelToCameraRay*` supports picking under a sensor camera. Viz unit tests cover plugin patch/unpatch lifecycle (see `packages/viz/test/DistortionRenderPlugin.test.ts`).
+| **9** | Publishable library: public entry, shared-uniform plugin, example scene, GPU parity tests, packaging |
 
 ---
 
@@ -163,10 +205,11 @@ Phase 6 left panel remains a visual reference. Phase 7 `pixelToCameraRay*` suppo
 
 | Question | Answer |
 |----------|--------|
-| Are camera extensions the right **user API**? | ✅ Yes — via `SensorRenderer` / `SensorCamera` |
-| Are camera extensions **sufficient alone**? | ❌ No — `SensorRenderer` wraps camera + `DistortionRenderPlugin` |
-| Can users avoid changing meshes/materials? | ✅ Yes, for built-in materials, via global plugin |
+| Are camera extensions the right **user API**? | ✅ Yes — via `SensorCamera` + `SensorRenderer` |
+| Are camera extensions **sufficient alone**? | ❌ No — the plugin patches materials and owns the uniforms |
+| Can users avoid changing meshes/materials? | ✅ Yes, for built-in materials, via the global patch |
+| Can one scene be rendered through several cameras? | ✅ Yes — camera passed per render call, shared uniforms |
 | Correct approach for distorted overlay on sensor image? | ✅ Forward distortion at projection time |
-| OpenCV-only forever? | ❌ No — pluggable model id + core/viz backend per model |
+| OpenCV-only forever? | ❌ No — pluggable model id + core/cameras backend per model |
 
 Implementation plan: [plans/phase-8-threejs-camera.md](./plans/phase-8-threejs-camera.md).
