@@ -6,14 +6,14 @@ Need to add a distrtion model, or see something I missed?  Throw it in. The test
 
 | Need | Where |
 |------|--------|
-| Bug reports, questions, feature ideas | [GitHub Issues](https://github.com/smilinfoo/three-camera-intrinsics-and-distortion-lab/issues/new/choose) (templates require npm-status acknowledgment) |
+| Bug reports, questions, feature ideas | [GitHub Issues](https://github.com/smilinfoo/three-intrinsic-lens-distortion-cameras/issues/new/choose) (templates require npm-status acknowledgment) |
 | Early integration or npm timeline | Open an issue and say so — or contact [@smilinfoo](https://github.com/smilinfoo) |
 
 ## Setup
 
 ```bash
-git clone https://github.com/smilinfoo/three-camera-intrinsics-and-distortion-lab.git
-cd three-camera-intrinsics-and-distortion-lab
+git clone https://github.com/smilinfoo/three-intrinsic-lens-distortion-cameras.git
+cd three-intrinsic-lens-distortion-cameras
 npm run setup          # JS deps + Python .venv (fixtures / verify)
 npm test               # 112 tests — must pass before PR
 npm run dev            # optional: visual sanity check

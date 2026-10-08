@@ -7,7 +7,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Propose a change that fits the repo scope ([README scope & limitations](https://github.com/smilinfoo/three-camera-intrinsics-and-distortion-lab#scope--limitations)).
+        Propose a change that fits the repo scope ([README scope & limitations](https://github.com/smilinfoo/three-intrinsic-lens-distortion-cameras#scope--limitations)).
         Large or out-of-scope ideas are welcome — they help prioritize the roadmap.
 
   - type: checkboxes

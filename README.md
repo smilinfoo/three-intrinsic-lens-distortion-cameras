@@ -1,7 +1,7 @@
 # Three.js Intrinsic Lens-Distortion Cameras
 
 > **Status:** Pre-release (0.x) — **not on npm yet**. Core math is verified against OpenCV golden fixtures and the Three.js layer is checked against it on the GPU, but the API may still change and the [known limitations](#scope--limitations) apply. Treat it as suitable for evaluation or prototyping, but lets talk before using it  production.
-> Need now or have a specific use case? [Open an issue](https://github.com/smilinfoo/three-camera-intrinsics-and-distortion-lab/issues/new/choose) or contact [@smilinfoo](https://github.com/smilinfoo).
+> Need now or have a specific use case? [Open an issue](https://github.com/smilinfoo/three-intrinsic-lens-distortion-cameras/issues/new/choose) or contact [@smilinfoo](https://github.com/smilinfoo).
 
 The original use was compareing data tags, bounds and other labeling givien in flat cartesian points to a 2d image taakenb with a given distortion profile.  It is a Three.js cameras that renders a scene, seen through a lens with the given intrisics ad distor. Give it OpenCV intrinsics and lens-distortion coefficients (pinhole, Brown-Conrady, rational polynomial or fisheye) and it projects your 3D geometry through that model, with built-in materials unchanged, so 3D bounding boxes, points and labels land on the same pixels as content derived from the 2D image. 
 
@@ -145,7 +145,7 @@ Screenshot baseline comparison is opt-in: `npm run test:visual:regression -w thr
 ## Project layout
 
 ```
-three-camera-intrinsics-and-distortion-lab/
+three-intrinsic-lens-distortion-cameras/
 ├── docs/                 # Conventions, architecture, phase plans, model equations
 ├── packages/
 │   ├── core/             # intrinsic-lens-distortion — camera math (library target)

@@ -102,5 +102,5 @@ First public lab release — Phases 0–8 complete. **Not published to npm.**
 | `viz` | 25 |
 | **Total** | **112** |
 
-[Unreleased]: https://github.com/smilinfoo/three-camera-intrinsics-and-distortion-lab/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/smilinfoo/three-camera-intrinsics-and-distortion-lab/releases/tag/v0.1.0
+[Unreleased]: https://github.com/smilinfoo/three-intrinsic-lens-distortion-cameras/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/smilinfoo/three-intrinsic-lens-distortion-cameras/releases/tag/v0.1.0

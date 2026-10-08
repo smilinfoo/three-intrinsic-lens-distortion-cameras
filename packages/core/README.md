@@ -16,5 +16,5 @@ const coeffs = brownConradyFromArray([-0.2, 0.05, 0.001, -0.001, 0.001]);
 const [u, v] = projectBrownConrady([0.1, 0, 1], K, coeffs);
 ```
 
-ESM only. See the [repository](https://github.com/smilinfoo/three-camera-intrinsics-and-distortion-lab)
+ESM only. See the [repository](https://github.com/smilinfoo/three-intrinsic-lens-distortion-cameras)
 for conventions and model references.

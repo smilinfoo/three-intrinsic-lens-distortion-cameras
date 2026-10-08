@@ -8,7 +8,7 @@ body:
     attributes:
       value: |
         Ask about coordinate conventions, importing from source, sensor rendering, or the roadmap to npm.
-        Search [closed issues](https://github.com/smilinfoo/three-camera-intrinsics-and-distortion-lab/issues?q=is%3Aissue+is%3Aclosed) first if you can.
+        Search [closed issues](https://github.com/smilinfoo/three-intrinsic-lens-distortion-cameras/issues?q=is%3Aissue+is%3Aclosed) first if you can.
 
   - type: checkboxes
     id: npm-ack

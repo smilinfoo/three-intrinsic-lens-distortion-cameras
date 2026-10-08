@@ -7,10 +7,10 @@
   "sideEffects": false,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/smilinfoo/three-camera-intrinsics-and-distortion-lab.git"
+    "url": "git+https://github.com/smilinfoo/three-intrinsic-lens-distortion-cameras.git"
   },
   "bugs": {
-    "url": "https://github.com/smilinfoo/three-camera-intrinsics-and-distortion-lab/issues"
+    "url": "https://github.com/smilinfoo/three-intrinsic-lens-distortion-cameras/issues"
   },
   "engines": {
     "node": ">=20"
