@@ -1,7 +1,6 @@
-import type { Vec2, Vec3 } from 'intrinsic-lens-distortion';
+import { projectPinhole, type Vec2, type Vec3 } from 'intrinsic-lens-distortion';
 import * as THREE from 'three';
 import { fitRendererToSensor, SensorCamera, SensorRenderer, type ModelId } from './index';
-import { createProjectionDemo } from './demo/createProjectionDemo';
 import {
   COEFFICIENT_FIELDS,
   defaultInput,
@@ -37,6 +36,7 @@ import {
 
 const MODELS: readonly ModelId[] = MODEL_PRESETS.map((p) => p.id);
 const OVERLAY_COLOR = '#ff2bd6';
+const BASELINE_COLOR = '#b4b9c0';
 /** Max GPU-vs-core probe error (px) reported as a pass. Marker rasterization alone gives ≤ ~0.71. */
 const PASS_PX = 1;
 
@@ -49,27 +49,18 @@ app.innerHTML = `
   <div class="layout">
     <header class="toolbar">
       <h1>Three.js Intrinsic Lens-Distortion Cameras</h1>
-      <label class="model-picker">
-        Reference model
-        <select id="model-select"></select>
-      </label>
-      <label class="model-picker"><input type="checkbox" id="overlay-toggle" checked /> CPU overlay (core)</label>
-      <p id="demo-subtitle" class="subtitle"></p>
+      <label class="toggle"><input type="checkbox" id="overlay-toggle" checked /> <span class="swatch magenta"></span> CPU projection (core)</label>
+      <label class="toggle"><input type="checkbox" id="baseline-toggle" checked /> <span class="swatch gray"></span> Undistorted baseline (pinhole, same K)</label>
+      <span class="legend"><span class="swatch green"></span> Scene probes (GPU)</span>
     </header>
     <div class="panels">
-      <section class="panel projection-panel">
-        <h2>Projection (OpenCV pixel space, independent 2D reference)</h2>
-        <canvas id="projection-canvas"></canvas>
-      </section>
-      <section class="panel scene-panel">
-        <h2>One Three.js scene, sensor cameras (green probes = scene points; magenta = CPU projection from core)</h2>
-        <div class="scene-scroll">
-        <div id="tiles" class="tiles"></div>
-        <div class="custom-row">
+      <section class="panel custom-panel">
+        <h2>Your camera — enter intrinsics and distortion, then check the GPU render against core</h2>
+        <div class="panel-scroll">
           <div id="custom-tile-slot"></div>
           <form id="custom-form" class="custom-form" autocomplete="off" novalidate>
-            <h3>Try your own camera</h3>
-            <p class="hint">Enter OpenCV intrinsics and distortion coefficients. The view on the left renders the scene through them; probes are placed from your own K and must match the CPU projection from <code>core</code>.</p>
+            <h3>Camera parameters</h3>
+            <p class="hint">OpenCV intrinsics and distortion coefficients. Probe points are placed from your own K, so they always land inside your image, and must match the CPU projection from <code>core</code>.</p>
             <div class="fields">
               <label>Model <select name="model"></select></label>
               <label>Width (px) <input name="imageWidth" type="number" step="1" min="${MIN_IMAGE_SIZE}" max="${MAX_IMAGE_SIZE}" /></label>
@@ -87,16 +78,19 @@ app.innerHTML = `
             <p id="custom-status" class="status" role="status"></p>
           </form>
         </div>
+      </section>
+      <section class="panel scene-panel">
+        <h2>Presets — one scene through four sensor cameras</h2>
+        <div class="panel-scroll">
+          <div id="tiles" class="tiles"></div>
         </div>
       </section>
     </div>
   </div>
 `;
 
-const canvas = document.getElementById('projection-canvas') as HTMLCanvasElement;
-const modelSelect = document.getElementById('model-select') as HTMLSelectElement;
-const subtitle = document.getElementById('demo-subtitle') as HTMLElement;
 const overlayToggle = document.getElementById('overlay-toggle') as HTMLInputElement;
+const baselineToggle = document.getElementById('baseline-toggle') as HTMLInputElement;
 const tilesContainer = document.getElementById('tiles') as HTMLElement;
 const customSlot = document.getElementById('custom-tile-slot') as HTMLElement;
 
@@ -303,6 +297,29 @@ function drawOverlay(tile: Tile): void {
   }
   const { imageWidth, imageHeight } = tile.spec;
   ctx.clearRect(0, 0, imageWidth, imageHeight);
+
+  // Undistorted baseline: plain pinhole projection with the same K. Straight lines stay
+  // straight, so the gap to the distorted grid shows how much the lens bends the image.
+  if (baselineToggle.checked && tile.spec.model !== 'pinhole') {
+    ctx.globalAlpha = 0.9;
+    // Dark halo first so the gray line stays visible over the light checker texture.
+    for (const [style, width] of [
+      ['rgba(0, 0, 0, 0.75)', 3.5],
+      [BASELINE_COLOR, 1.5],
+    ] as const) {
+      ctx.strokeStyle = style;
+      ctx.lineWidth = width;
+      for (const [a, b] of gridSegments) {
+        const [u0, v0] = projectPinhole(a, tile.spec.intrinsics);
+        const [u1, v1] = projectPinhole(b, tile.spec.intrinsics);
+        ctx.beginPath();
+        ctx.moveTo(u0, v0);
+        ctx.lineTo(u1, v1);
+        ctx.stroke();
+      }
+    }
+  }
+
   if (!overlayToggle.checked) {
     return;
   }
@@ -394,16 +411,13 @@ function renderAll(): void {
   }
 }
 
-createProjectionDemo(canvas, modelSelect, subtitle, (modelId) => {
-  for (const tile of tiles.values()) {
-    tile.root.classList.toggle('selected', tile.id === modelId);
-  }
-});
-overlayToggle.addEventListener('change', () => {
-  for (const tile of [...tiles.values(), customTile]) {
-    drawOverlay(tile);
-  }
-});
+for (const toggle of [overlayToggle, baselineToggle]) {
+  toggle.addEventListener('change', () => {
+    for (const tile of [...tiles.values(), customTile]) {
+      drawOverlay(tile);
+    }
+  });
+}
 
 fillForm(defaultInput('brown-conrady'));
 setCustomProbePoints(example.customProbes, customTile.probes);

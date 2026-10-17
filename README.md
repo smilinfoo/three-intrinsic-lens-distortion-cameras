@@ -1,5 +1,5 @@
 # Three.js Intrinsic Lens-Distortion Cameras
-
+![Alt text](docs/demo_cap.png)
 > **Status:** Pre-release (0.x) — **not on npm yet**. Core math is verified against OpenCV golden fixtures and the Three.js layer is checked against it on the GPU, but the API may still change and the [known limitations](#scope--limitations) apply. Treat it as suitable for evaluation or prototyping, but lets talk before using it  production.
 > Need now or have a specific use case? [Open an issue](https://github.com/smilinfoo/three-intrinsic-lens-distortion-cameras/issues/new/choose) or contact [@smilinfoo](https://github.com/smilinfoo).
 
@@ -46,7 +46,7 @@ API is **0.x** — correct and tested, but still evolving before a 1.0 release. 
 ```bash
 npm run setup    # JS deps + Python .venv (for fixtures / verify only)
 npm test         # 167 tests (87 core + 80 cameras) — no GPU or browser needed
-npm run dev      # demo: one scene through four sensor cameras + a form for your own intrinsics
+npm run dev      # demo: enter your own intrinsics + four preset cameras on one scene
 npm run test:visual   # GPU-vs-core checks in headless Chromium (first run: npx playwright install chromium)
 ```
 
@@ -113,10 +113,11 @@ const pixel = projectBrownConrady([0.1, 0, 1], K, coeffs);
 
 ## Demo / example scene (`npm run dev`)
 
-- **Left:** 2D grid in OpenCV pixel space — independent canvas reference for the selected model
-- **Right:** **one** standard Three.js scene (lit, textured, tessellated floor and wall, one sphere per built-in material, box, calibration grid, shadows) rendered through **four** sensor cameras at once: pinhole, Brown-Conrady, rational, fisheye
-- **CPU overlay (magenta):** `core` projects the same 3D points on the CPU and draws them on top of each GPU view. Green probe markers are scene points; they should sit under the magenta crosses. Each view shows its maximum probe error in pixels
-- **Try your own camera:** the form under the four views takes a model, image size, `fx`/`fy`/`cx`/`cy` and that model's coefficients (OpenCV order). It renders a fifth view through your camera, places probe points from *your* intrinsics (so they land inside your image), and reports whether the GPU render matches the CPU projection from `core` (✓ ≤ 1 px, with errors for invalid input). Use it to sanity-check calibration values before wiring them into your own scene
+- **Left (prominent): your camera.** Pick a model, image size, `fx`/`fy`/`cx`/`cy` and that model's coefficients (OpenCV order), press Apply, and the large view renders the scene through your camera. Probe points are placed from *your* intrinsics (so they land inside your image), and the status line reports whether the GPU render matches the CPU projection from `core` (✓ ≤ 1 px; invalid input is rejected with a message). Use it to sanity-check calibration values before wiring them into your own scene
+- **Right:** the same **one** standard Three.js scene (lit, textured, tessellated floor and wall, one sphere per built-in material, box, calibration grid, shadows) rendered through the four preset cameras at once: pinhole, Brown-Conrady, rational, fisheye
+- **Overlays (toggle in the toolbar), drawn on every view:**
+  - **magenta — CPU projection:** `core` projects the same 3D points and grid on the CPU on top of the GPU render. Green probe markers are scene points; they should sit under the magenta crosses. Each view shows its maximum probe error in pixels
+  - **gray — undistorted baseline:** the same grid projected with a plain pinhole at the same `K`. Straight gray lines against the bent grid show how much the lens distorts (not drawn for pinhole)
 - The example imports only the public entry (`packages/cameras/src/index.ts`), so it doubles as an API-shape check
 
 The demo is for visual sanity; trust `core` golden tests for numerical correctness.
@@ -184,7 +185,7 @@ Run `npm audit` periodically; CI does not fail on audit today — check locally 
 1. **Unit tests** — hand-crafted edge cases per model (symmetry, zero distortion, behind-camera policy)
 2. **Golden tests** — Python-generated fixtures under `reference/fixtures/`; primary correctness gate
 3. **Cameras unit tests** — plugin patching across built-in materials, shared-uniform lifecycle, projection matrix parity, camera mutation, public API surface, pixel→ray frame conversion
-4. **Visual tests** (`npm run test:visual`) — real GPU path in headless Chromium: probe points rendered through each camera must land within 1 px of the `core` projection; several cameras on one scene must not interfere; a stock camera afterwards must be undistorted; every built-in material must compile and render; the "Try your own camera" form must accept valid intrinsics (any model, image size and principal point), reject invalid ones, and report a pass only when the GPU matches `core`
+4. **Visual tests** (`npm run test:visual`) — real GPU path in headless Chromium: probe points rendered through each camera must land within 1 px of the `core` projection; several cameras on one scene must not interfere; a stock camera afterwards must be undistorted; every built-in material must compile and render; the "Your camera" form must accept valid intrinsics (any model, image size and principal point), reject invalid ones, and report a pass only when the GPU matches `core`
 5. **Packaging checks** — `pack:check` and `test:consumer` prove the tarballs install, type-check and bundle in a fresh project
 
 See [docs/progress.md](./docs/progress.md) for the full phase checklist (Phases 0–8 complete).

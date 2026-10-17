@@ -155,7 +155,7 @@ Presets (`createSensorCamera({ model })`, model switching) live in the **demo ap
 |-------|-------|------|
 | Unit | `packages/cameras/test/*.test.ts` | Patching per material class, shared-uniform identity, constant cache key, no per-frame `needsUpdate`, arming/disarming (incl. on throw), culling restore, camera mutation, public API surface |
 | GPU parity | `packages/cameras/test/visual/` (Playwright, software WebGL) | Probe points rendered through each model land within 1 px of the `core` projection; several cameras on one scene; coefficient changes on a live camera; stock camera afterwards undistorted; every built-in material renders |
-| Visual | demo (`npm run dev`) | One scene through four cameras with a CPU-projection overlay (magenta) and per-view probe error; **"Try your own camera"** form for custom intrinsics/coefficients with a pass/fail check against `core` |
+| Visual | demo (`npm run dev`) | A large **"Your camera"** view with a form for custom intrinsics/coefficients and a pass/fail check against `core`, plus one scene through four preset cameras; every view has a CPU-projection overlay (magenta), per-view probe error and an undistorted pinhole baseline (gray) |
 
 ---
 

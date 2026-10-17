@@ -74,7 +74,7 @@ Demo / example scene (not published): `main.ts`, `scene/createScene.ts`, `demo/`
 
 Unit tests cover patching across built-in materials, shared-uniform lifecycle, camera mutation, public API surface, projection matrix parity and pixel→ray conversion. Visual tests (`packages/cameras/test/visual/`) render probe points through each model and require ≤ 1 px agreement with `core`, plus multi-camera isolation, stock-camera isolation, live coefficient changes, per-material coverage and the custom-camera form.
 
-**`npm run dev`** — demo: 2D reference canvas, one lit/textured scene through four sensor cameras with a CPU-projection overlay and per-view probe error, and a **"Try your own camera"** form (model, image size, `fx`/`fy`/`cx`/`cy`, coefficients) that checks the GPU render against `core`.
+**`npm run dev`** — demo: a large **"Your camera"** view with a form (model, image size, `fx`/`fy`/`cx`/`cy`, coefficients) that checks the GPU render against `core`, plus one lit/textured scene through the four preset cameras. Every view has a CPU-projection overlay (magenta) with per-view probe error, and an undistorted pinhole baseline (gray).
 
 ---
 

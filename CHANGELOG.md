@@ -8,7 +8,7 @@ Until the packages are published to npm, versions mark **lab milestones** in the
 
 ## [Unreleased]
 
-Phase 9 — publishable camera library. **Still not published to npm.**
+**Still not published to npm.**
 
 ### Changed (breaking, 0.x)
 
@@ -33,7 +33,7 @@ Phase 9 — publishable camera library. **Still not published to npm.**
 - Opt-in patching of custom `ShaderMaterial`s that include `<project_vertex>` (`material.userData.sensorDistortion = true`), `ShadowMaterial` support, and a one-time warning for unsupported materials.
 - `core` and the cameras package build to ESM + `.d.ts` (tsup), are no longer private, and have `exports`, `files`, READMEs and LICENSE.
 - `npm run pack:check`, `npm run test:consumer` and `npm run typecheck`; `@types/three` added so types are actually checked.
-- Example scene (one lit scene through four cameras, CPU-projection overlay, per-view error readout) and a "Try your own camera" form that checks a custom K against `core`.
+- Example scene (one lit scene through four cameras, CPU-projection overlay, per-view error readout) and a prominent "Your camera" view with a form that checks a custom K against `core`. Every view can overlay an undistorted pinhole baseline (gray) next to the CPU projection (magenta). The earlier 2D projection panel and reference-model dropdown were removed.
 - Playwright visual suite (`npm run test:visual`, software WebGL) checking GPU output within 1 px of `core`, plus multi-camera, material and form tests.
 - CI jobs for typecheck, library and demo builds, pack check, consumer smoke test and the visual suite.
 
@@ -52,7 +52,7 @@ Phase 9 — publishable camera library. **Still not published to npm.**
 | `cameras` | 80 |
 | **Total** | **167** |
 
-Plus 29 Playwright visual tests (`npm run test:visual`, not part of `npm test`).
+Plus 33 Playwright visual tests (`npm run test:visual`, not part of `npm test`).
 
 ## [0.1.0] - 2026-07-23
 
@@ -104,3 +104,8 @@ First public lab release — Phases 0–8 complete. **Not published to npm.**
 
 [Unreleased]: https://github.com/smilinfoo/three-intrinsic-lens-distortion-cameras/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/smilinfoo/three-intrinsic-lens-distortion-cameras/releases/tag/v0.1.0
+
+## 0.1.1 - In progress
+
+### Changes
+- Demo scene now highlights the dynamic scene and removes sthe initial static display.

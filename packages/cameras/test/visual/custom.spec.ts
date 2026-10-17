@@ -69,18 +69,34 @@ test.describe('custom camera form', () => {
 });
 
 test.describe('layout', () => {
-  test('form is reachable by scrolling the same container as the views (short window)', async ({ page }) => {
+  test('your camera is the prominent left panel and is visible without scrolling', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await openLab(page);
 
-    const scroller = page.locator('.scene-scroll');
+    const custom = page.locator('.custom-panel');
+    const presets = page.locator('.scene-panel');
+    const customBox = (await custom.boundingBox())!;
+    const presetBox = (await presets.boundingBox())!;
+    expect(customBox.x).toBeLessThan(presetBox.x);
+    expect(customBox.width).toBeGreaterThan(presetBox.width);
+
+    const tile = (await page.locator('.tile[data-model="custom"]').boundingBox())!;
+    expect(tile.y).toBeGreaterThanOrEqual(0);
+    expect(tile.y + tile.height).toBeLessThanOrEqual(720);
+    await expect(page.locator('#model-select')).toHaveCount(0);
+    await expect(page.locator('#projection-canvas')).toHaveCount(0);
+  });
+
+  test('form is reachable by scrolling its own panel (short window); page does not scroll', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await openLab(page);
+
+    const scroller = page.locator('.custom-panel .panel-scroll');
     const metrics = await scroller.evaluate((el) => ({ scroll: el.scrollHeight, client: el.clientHeight }));
     expect(metrics.scroll, 'content should overflow so scrolling is needed').toBeGreaterThan(metrics.client);
-
-    // The page itself must not scroll; the form lives in the same scroller as the tiles.
     expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight)).toBe(true);
-    expect(await scroller.locator('#tiles').count()).toBe(1);
     expect(await scroller.locator('#custom-form').count()).toBe(1);
+    expect(await scroller.locator('.tile[data-model="custom"]').count()).toBe(1);
 
     await scroller.evaluate((el) => el.scrollTo(0, el.scrollHeight));
     const apply = page.getByRole('button', { name: 'Apply' });
@@ -89,5 +105,54 @@ test.describe('layout', () => {
     expect(box.y + box.height).toBeLessThanOrEqual(720);
     await apply.click();
     await expect(page.locator('#custom-status')).toHaveClass(/ok/);
+  });
+
+  test('preset views scroll independently in the right panel', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 500 });
+    await openLab(page);
+    const scroller = page.locator('.scene-panel .panel-scroll');
+    expect(await scroller.locator('.tile').count()).toBe(4);
+    const m = await scroller.evaluate((el) => ({ scroll: el.scrollHeight, client: el.clientHeight }));
+    expect(m.scroll).toBeGreaterThan(m.client);
+  });
+});
+
+/** Number of non-transparent pixels on a tile's 2D overlay canvas. */
+async function overlayInk(page: Page, id: string): Promise<number> {
+  return page.evaluate((tileId) => {
+    const c = document.querySelector(`.tile[data-model="${tileId}"] canvas.overlay`) as HTMLCanvasElement;
+    const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
+    let n = 0;
+    for (let i = 3; i < d.length; i += 4) if (d[i]! > 0) n++;
+    return n;
+  }, id);
+}
+
+test.describe('undistorted baseline overlay', () => {
+  test('baseline draws extra (gray) lines on distorting views and nothing on pinhole', async ({ page }) => {
+    await openLab(page);
+    await page.locator('#overlay-toggle').uncheck(); // isolate the baseline layer
+
+    await page.locator('#baseline-toggle').check();
+    for (const model of ['brown-conrady', 'rational', 'fisheye', 'custom']) {
+      expect(await overlayInk(page, model), `${model} baseline`).toBeGreaterThan(500);
+    }
+    expect(await overlayInk(page, 'pinhole')).toBe(0);
+
+    await page.locator('#baseline-toggle').uncheck();
+    for (const model of ['brown-conrady', 'rational', 'fisheye', 'custom']) {
+      expect(await overlayInk(page, model), `${model} baseline off`).toBe(0);
+    }
+  });
+
+  test('baseline and CPU projection are independent layers', async ({ page }) => {
+    await openLab(page);
+    await page.locator('#baseline-toggle').uncheck();
+    await page.locator('#overlay-toggle').check();
+    const overlayOnly = await overlayInk(page, 'fisheye');
+    await page.locator('#baseline-toggle').check();
+    const both = await overlayInk(page, 'fisheye');
+    expect(overlayOnly).toBeGreaterThan(0);
+    expect(both).toBeGreaterThan(overlayOnly);
   });
 });

@@ -201,7 +201,7 @@ export function buildExampleScene(): ExampleScene {
   const gallery: GalleryItem[] = GALLERY_MATERIALS.map(([name, make], i) => {
     const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.2, 32, 24), make());
     const x = -1.75 + i * 0.5;
-    mesh.position.set(x, 0.35, -5);
+    mesh.position.set(x, 0.0, -4);
     mesh.castShadow = true;
     mesh.name = `gallery-${name}`;
     scene.add(mesh);
